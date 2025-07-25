@@ -2,6 +2,7 @@
 
 import { usePatients } from '../context/PatientContext';
 import Link from 'next/link';
+import SupabaseSetupGuide from '../components/SupabaseSetupGuide';
 
 export default function Dashboard() {
   const { patients } = usePatients();
@@ -77,6 +78,9 @@ export default function Dashboard() {
           }
         </p>
       </div>
+
+      {/* Supabase Setup Guide - will only show if database is not properly configured */}
+      <SupabaseSetupGuide />
 
       {/* Stats Section */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">

@@ -6,7 +6,8 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "setup-db": "node src/scripts/setup-database.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.52.1",

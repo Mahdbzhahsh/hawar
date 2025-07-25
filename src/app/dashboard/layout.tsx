@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
+import DatabaseStatus from '../components/DatabaseStatus';
 
 // Navigation items for the sidebar
 const navigationItems = [
