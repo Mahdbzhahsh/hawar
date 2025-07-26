@@ -11,14 +11,19 @@ type AuthContextType = {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
+  userId: string | null;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+// Admin user ID to use for admin login (using a valid UUID format)
+const ADMIN_USER_ID = '00000000-0000-0000-0000-000000000000';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAdminAuth, setIsAdminAuth] = useState(false); // Track if user is authenticated as admin
+  const [userId, setUserId] = useState<string | null>(null);
   const router = useRouter();
 
   // Check for session on initial load
@@ -29,6 +34,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const adminAuth = localStorage.getItem('adminAuth');
         if (adminAuth === 'true') {
           setIsAdminAuth(true);
+          setUserId(ADMIN_USER_ID);
           setIsLoading(false);
           return;
         }
@@ -39,7 +45,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           console.error('Error fetching session:', error);
         }
         
-        setSession(session);
+        if (session?.user) {
+          setSession(session);
+          setUserId(session.user.id);
+        }
       } catch (error) {
         console.error('Error fetching session:', error);
       } finally {
@@ -53,6 +62,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         setSession(session);
+        setUserId(session?.user?.id || null);
+        if (!session) {
+          // If session is null and admin auth was set, check if we need to maintain admin auth
+          const adminAuth = localStorage.getItem('adminAuth');
+          if (adminAuth === 'true') {
+            setIsAdminAuth(true);
+            setUserId(ADMIN_USER_ID);
+          }
+        }
       }
     );
 
@@ -66,18 +84,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // For admin/root credentials, use simple authentication
     if (email === 'admin' && password === 'root') {
       setIsAdminAuth(true);
+      setUserId(ADMIN_USER_ID);
       localStorage.setItem('adminAuth', 'true');
       return { success: true };
     }
     
     // For other credentials, use Supabase authentication
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
       
       if (error) throw error;
+      
+      if (data.user) {
+        setUserId(data.user.id);
+      }
       
       return { success: true };
     } catch (error) {
@@ -93,6 +116,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (isAdminAuth) {
         localStorage.removeItem('adminAuth');
         setIsAdminAuth(false);
+        setUserId(null);
       }
       
       // Also sign out from Supabase (won't hurt even if not signed in)
@@ -110,7 +134,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isAuthenticated: !!session || isAdminAuth, 
       isLoading,
       login, 
-      logout 
+      logout,
+      userId: userId
     }}>
       {children}
     </AuthContext.Provider>

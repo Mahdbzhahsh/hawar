@@ -57,7 +57,11 @@ export default function SupabaseSetupGuide() {
               <li>Copy and paste the following SQL:</li>
             </ol>
             <pre className="mt-2 p-2 bg-amber-100 rounded text-xs overflow-auto">
-              {`CREATE TABLE IF NOT EXISTS public.patients (
+              {`-- Drop the existing table if it has foreign key constraints
+DROP TABLE IF EXISTS public.patients;
+
+-- Create patients table without foreign key constraints
+CREATE TABLE public.patients (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   name TEXT NOT NULL,
   age TEXT,
@@ -76,29 +80,54 @@ export default function SupabaseSetupGuide() {
 -- Enable Row Level Security
 ALTER TABLE public.patients ENABLE ROW LEVEL SECURITY;
 
--- Create policy to allow users to see only their own patients
+-- First, create a policy to allow authenticated users to see their own patients
 CREATE POLICY "Users can view their own patients" 
   ON public.patients 
   FOR SELECT 
   USING (auth.uid() = user_id);
 
--- Create policy to allow users to insert their own patients
+-- Create policy to allow authenticated users to insert their own patients
 CREATE POLICY "Users can insert their own patients" 
   ON public.patients 
   FOR INSERT 
   WITH CHECK (auth.uid() = user_id);
 
--- Create policy to allow users to update their own patients
+-- Create policy to allow authenticated users to update their own patients
 CREATE POLICY "Users can update their own patients" 
   ON public.patients 
   FOR UPDATE 
   USING (auth.uid() = user_id);
 
--- Create policy to allow users to delete their own patients
+-- Create policy to allow authenticated users to delete their own patients
 CREATE POLICY "Users can delete their own patients" 
   ON public.patients 
   FOR DELETE 
-  USING (auth.uid() = user_id);`}
+  USING (auth.uid() = user_id);
+
+-- Create special admin policies for the admin user (using the zero UUID)
+-- Admin view policy
+CREATE POLICY "Admin can view all patients" 
+  ON public.patients 
+  FOR SELECT 
+  USING (user_id = '00000000-0000-0000-0000-000000000000');
+
+-- Admin insert policy
+CREATE POLICY "Admin can insert patients" 
+  ON public.patients 
+  FOR INSERT 
+  WITH CHECK (user_id = '00000000-0000-0000-0000-000000000000');
+
+-- Admin update policy
+CREATE POLICY "Admin can update all patients" 
+  ON public.patients 
+  FOR UPDATE 
+  USING (user_id = '00000000-0000-0000-0000-000000000000');
+
+-- Admin delete policy
+CREATE POLICY "Admin can delete all patients" 
+  ON public.patients 
+  FOR DELETE 
+  USING (user_id = '00000000-0000-0000-0000-000000000000');`}
             </pre>
             <p className="mt-2">
               After running the SQL, refresh this page to start using the application with your Supabase database.

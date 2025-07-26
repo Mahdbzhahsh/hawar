@@ -20,6 +20,9 @@ function askQuestion(query) {
 
 async function main() {
   console.log('\n🔧 Supabase Database Setup Script 🔧\n');
+  console.log('This script will set up your Supabase database for the Patient Management System.');
+  console.log('It will create the necessary tables and policies to allow both regular users');
+  console.log('and the admin user (admin/root) to store and access patient data in Supabase.\n');
   
   // Ask for Supabase credentials
   const supabaseUrl = await askQuestion('Enter your Supabase URL (e.g., https://xyz.supabase.co): ');
@@ -58,6 +61,10 @@ async function main() {
       console.log('6. Run the query');
     } else {
       console.log('✅ Database schema created successfully!');
+      console.log('\nImportant Notes:');
+      console.log('- The patients table now uses TEXT for user_id instead of UUID');
+      console.log('- Policies have been set up to allow the admin user (admin/root) to access all records');
+      console.log('- Regular users can only access their own records');
     }
     
     console.log('\n🎉 Setup complete! You can now use your application with Supabase.');

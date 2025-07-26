@@ -51,23 +51,17 @@ interface PatientContextType {
 
 const PatientContext = createContext<PatientContextType | undefined>(undefined);
 
-// For admin login, we'll use local storage
-const ADMIN_PATIENTS_KEY = 'adminPatients';
-
 export function PatientProvider({ children }: { children: React.ReactNode }) {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tableChecked, setTableChecked] = useState(false);
-  const { session, isAuthenticated } = useAuth();
-
-  // Check if user is logged in as admin
-  const isAdmin = !session && isAuthenticated;
+  const { session, isAuthenticated, userId } = useAuth();
 
   // Check if the patients table exists
   useEffect(() => {
     async function checkTable() {
-      if (!isAdmin && session?.user) {
+      if (isAuthenticated) {
         const exists = await ensurePatientsTableExists();
         if (!exists) {
           setError('Database table not found. Please contact the administrator.');
@@ -81,7 +75,7 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
     if (!tableChecked && isAuthenticated) {
       checkTable();
     }
-  }, [isAdmin, session, isAuthenticated, tableChecked]);
+  }, [isAuthenticated, tableChecked]);
 
   // Load patients data
   const fetchPatients = async () => {
@@ -89,56 +83,49 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(true);
       setError(null);
       
-      if (isAdmin) {
-        // Admin uses local storage
-        const storedPatients = localStorage.getItem(ADMIN_PATIENTS_KEY);
-        if (storedPatients) {
-          try {
-            const parsedPatients = JSON.parse(storedPatients);
-            setPatients(parsedPatients);
-          } catch (e) {
-            console.error('Failed to parse patients data:', e);
-            localStorage.removeItem(ADMIN_PATIENTS_KEY);
-            setPatients([]);
-          }
-        } else {
-          setPatients([]);
-        }
-      } else if (session?.user) {
-        // Regular user uses Supabase
-        const { data, error } = await supabase
-          .from('patients')
-          .select('*')
-          .order('created_at', { ascending: false });
-        
-        if (error) {
-          console.error('Supabase error fetching patients:', error);
-          throw new Error(`Database error: ${error.message}`);
-        }
-        
-        if (data) {
-          // Map from snake_case to camelCase
-          const formattedPatients = data.map((p: PatientRecord) => ({
-            id: p.id,
-            name: p.name,
-            age: p.age,
-            hospitalFileNumber: p.hospital_file_number,
-            mobileNumber: p.mobile_number,
-            sex: p.sex,
-            ageOfDiagnosis: p.age_of_diagnosis,
-            diagnosis: p.diagnosis,
-            treatment: p.treatment,
-            response: p.response,
-            note: p.note,
-            createdAt: p.created_at,
-            userId: p.user_id
-          }));
-          
-          setPatients(formattedPatients);
-        }
-      } else {
+      if (!isAuthenticated || !userId) {
         // Not authenticated
         setPatients([]);
+        return;
+      }
+
+      // For admin user, don't filter by user_id to get all records
+      let query = supabase
+        .from('patients')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      // If not the admin user, filter by user_id
+      if (userId !== '00000000-0000-0000-0000-000000000000') {
+        query = query.eq('user_id', userId);
+      }
+      
+      const { data, error } = await query;
+      
+      if (error) {
+        console.error('Supabase error fetching patients:', error);
+        throw new Error(`Database error: ${error.message}`);
+      }
+      
+      if (data) {
+        // Map from snake_case to camelCase
+        const formattedPatients = data.map((p: PatientRecord) => ({
+          id: p.id,
+          name: p.name,
+          age: p.age,
+          hospitalFileNumber: p.hospital_file_number,
+          mobileNumber: p.mobile_number,
+          sex: p.sex,
+          ageOfDiagnosis: p.age_of_diagnosis,
+          diagnosis: p.diagnosis,
+          treatment: p.treatment,
+          response: p.response,
+          note: p.note,
+          createdAt: p.created_at,
+          userId: p.user_id
+        }));
+        
+        setPatients(formattedPatients);
       }
     } catch (err) {
       console.error('Error fetching patients:', err);
@@ -150,10 +137,12 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
 
   // Refresh patients when auth state changes
   useEffect(() => {
-    if (tableChecked) {
+    if (tableChecked && isAuthenticated && userId) {
       fetchPatients();
+    } else {
+      setPatients([]);
     }
-  }, [isAuthenticated, session, isAdmin, tableChecked]);
+  }, [isAuthenticated, userId, tableChecked]);
 
   // Add a new patient
   const addPatient = async (patientData: Omit<Patient, 'id' | 'createdAt' | 'userId'>) => {
@@ -161,64 +150,52 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(true);
       setError(null);
       
-      if (isAdmin) {
-        // Admin uses local storage
+      if (!isAuthenticated || !userId) {
+        throw new Error('Not authenticated');
+      }
+
+      // Always use Supabase for data storage
+      const { data, error } = await supabase
+        .from('patients')
+        .insert({
+          name: patientData.name,
+          age: patientData.age,
+          hospital_file_number: patientData.hospitalFileNumber,
+          mobile_number: patientData.mobileNumber,
+          sex: patientData.sex,
+          age_of_diagnosis: patientData.ageOfDiagnosis,
+          diagnosis: patientData.diagnosis,
+          treatment: patientData.treatment,
+          response: patientData.response,
+          note: patientData.note,
+          user_id: userId
+        })
+        .select();
+      
+      if (error) {
+        console.error('Supabase error adding patient:', error);
+        throw new Error(`Database error: ${error.message}`);
+      }
+      
+      if (data && data[0]) {
+        // Add the new patient to the state
         const newPatient: Patient = {
-          ...patientData,
-          id: `local-${Date.now()}`,
-          createdAt: new Date().toISOString(),
-          userId: 'admin'
+          id: data[0].id,
+          name: data[0].name,
+          age: data[0].age,
+          hospitalFileNumber: data[0].hospital_file_number,
+          mobileNumber: data[0].mobile_number,
+          sex: data[0].sex,
+          ageOfDiagnosis: data[0].age_of_diagnosis,
+          diagnosis: data[0].diagnosis,
+          treatment: data[0].treatment,
+          response: data[0].response,
+          note: data[0].note,
+          createdAt: data[0].created_at,
+          userId: data[0].user_id
         };
         
-        const updatedPatients = [newPatient, ...patients];
-        setPatients(updatedPatients);
-        localStorage.setItem(ADMIN_PATIENTS_KEY, JSON.stringify(updatedPatients));
-      } else if (session?.user?.id) {
-        // Regular user uses Supabase
-        const { data, error } = await supabase
-          .from('patients')
-          .insert({
-            name: patientData.name,
-            age: patientData.age,
-            hospital_file_number: patientData.hospitalFileNumber,
-            mobile_number: patientData.mobileNumber,
-            sex: patientData.sex,
-            age_of_diagnosis: patientData.ageOfDiagnosis,
-            diagnosis: patientData.diagnosis,
-            treatment: patientData.treatment,
-            response: patientData.response,
-            note: patientData.note,
-            user_id: session.user.id
-          })
-          .select();
-        
-        if (error) {
-          console.error('Supabase error adding patient:', error);
-          throw new Error(`Database error: ${error.message}`);
-        }
-        
-        if (data && data[0]) {
-          // Add the new patient to the state
-          const newPatient: Patient = {
-            id: data[0].id,
-            name: data[0].name,
-            age: data[0].age,
-            hospitalFileNumber: data[0].hospital_file_number,
-            mobileNumber: data[0].mobile_number,
-            sex: data[0].sex,
-            ageOfDiagnosis: data[0].age_of_diagnosis,
-            diagnosis: data[0].diagnosis,
-            treatment: data[0].treatment,
-            response: data[0].response,
-            note: data[0].note,
-            createdAt: data[0].created_at,
-            userId: data[0].user_id
-          };
-          
-          setPatients(prevPatients => [newPatient, ...prevPatients]);
-        }
-      } else {
-        throw new Error('Not authenticated');
+        setPatients(prevPatients => [newPatient, ...prevPatients]);
       }
     } catch (err) {
       console.error('Error adding patient:', err);
@@ -235,33 +212,40 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(true);
       setError(null);
       
-      if (isAdmin) {
-        // Admin uses local storage
-        const updatedPatients = patients.map((patient: Patient) => 
-          patient.id === id ? { ...patient, ...patientData } : patient
-        );
-        setPatients(updatedPatients);
-        localStorage.setItem(ADMIN_PATIENTS_KEY, JSON.stringify(updatedPatients));
-      } else if (session?.user.id) {
-        // Regular user uses Supabase
-        const { error } = await supabase
-          .from('patients')
-          .update(patientData)
-          .eq('id', id)
-          .eq('user_id', session.user.id);
-        
-        if (error) {
-          console.error('Supabase error editing patient:', error);
-          throw new Error(`Database error: ${error.message}`);
-        }
-        
-        // Update local state
-        setPatients((prevPatients: Patient[]) => prevPatients.map((patient: Patient) => 
-          patient.id === id ? { ...patient, ...patientData } : patient
-        ));
-      } else {
+      if (!isAuthenticated || !userId) {
         throw new Error('Not authenticated');
       }
+
+      // Convert camelCase to snake_case for database
+      const dbData: any = {};
+      
+      if (patientData.name !== undefined) dbData.name = patientData.name;
+      if (patientData.age !== undefined) dbData.age = patientData.age;
+      if (patientData.hospitalFileNumber !== undefined) dbData.hospital_file_number = patientData.hospitalFileNumber;
+      if (patientData.mobileNumber !== undefined) dbData.mobile_number = patientData.mobileNumber;
+      if (patientData.sex !== undefined) dbData.sex = patientData.sex;
+      if (patientData.ageOfDiagnosis !== undefined) dbData.age_of_diagnosis = patientData.ageOfDiagnosis;
+      if (patientData.diagnosis !== undefined) dbData.diagnosis = patientData.diagnosis;
+      if (patientData.treatment !== undefined) dbData.treatment = patientData.treatment;
+      if (patientData.response !== undefined) dbData.response = patientData.response;
+      if (patientData.note !== undefined) dbData.note = patientData.note;
+
+      // Always use Supabase for data storage
+      const { error } = await supabase
+        .from('patients')
+        .update(dbData)
+        .eq('id', id)
+        .eq('user_id', userId);
+      
+      if (error) {
+        console.error('Supabase error editing patient:', error);
+        throw new Error(`Database error: ${error.message}`);
+      }
+      
+      // Update local state
+      setPatients((prevPatients: Patient[]) => prevPatients.map((patient: Patient) => 
+        patient.id === id ? { ...patient, ...patientData } : patient
+      ));
     } catch (err) {
       console.error('Error editing patient:', err);
       setError('Failed to edit patient');
@@ -282,29 +266,24 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(true);
       setError(null);
       
-      if (isAdmin) {
-        // Admin uses local storage
-        const updatedPatients = patients.filter((patient: Patient) => patient.id !== id);
-        setPatients(updatedPatients);
-        localStorage.setItem(ADMIN_PATIENTS_KEY, JSON.stringify(updatedPatients));
-      } else if (session?.user.id) {
-        // Regular user uses Supabase
-        const { error } = await supabase
-          .from('patients')
-          .delete()
-          .eq('id', id)
-          .eq('user_id', session.user.id);
-        
-        if (error) {
-          console.error('Supabase error deleting patient:', error);
-          throw new Error(`Database error: ${error.message}`);
-        }
-        
-        // Update local state
-        setPatients((prevPatients: Patient[]) => prevPatients.filter((patient: Patient) => patient.id !== id));
-      } else {
+      if (!isAuthenticated || !userId) {
         throw new Error('Not authenticated');
       }
+
+      // Always use Supabase for data storage
+      const { error } = await supabase
+        .from('patients')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', userId);
+      
+      if (error) {
+        console.error('Supabase error deleting patient:', error);
+        throw new Error(`Database error: ${error.message}`);
+      }
+      
+      // Update local state
+      setPatients((prevPatients: Patient[]) => prevPatients.filter((patient: Patient) => patient.id !== id));
     } catch (err) {
       console.error('Error deleting patient:', err);
       setError('Failed to delete patient');
