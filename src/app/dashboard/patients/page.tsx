@@ -13,6 +13,12 @@ export default function PatientsPage() {
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [showMobileDetails, setShowMobileDetails] = useState(false);
+  const [ageFilter, setAgeFilter] = useState<string>('all');
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [customMinAge, setCustomMinAge] = useState<string>('');
+  const [customMaxAge, setCustomMaxAge] = useState<string>('');
+  const [showCustomAgeInputs, setShowCustomAgeInputs] = useState(false);
 
   // Format date for display
   const formatDate = (dateString: string) => {
@@ -31,17 +37,50 @@ export default function PatientsPage() {
     refreshPatients();
   }, []);
 
-  // Filter patients based on search term
-  const filteredPatients = patients.filter(patient => 
-    patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    patient.hospitalFileNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    patient.diagnosis.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Filter patients based on search term and age filter
+  const filteredPatients = patients.filter(patient => {
+    // Text search filter
+    const matchesSearch = 
+      patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      patient.hospitalFileNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      patient.diagnosis.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    // Age filter
+    let matchesAge = true;
+    if (ageFilter !== 'all') {
+      const patientAge = parseInt(patient.age) || 0;
+      
+      switch (ageFilter) {
+        case 'under18':
+          matchesAge = patientAge < 18;
+          break;
+        case '18to30':
+          matchesAge = patientAge >= 18 && patientAge <= 30;
+          break;
+        case '31to50':
+          matchesAge = patientAge >= 31 && patientAge <= 50;
+          break;
+        case 'over50':
+          matchesAge = patientAge > 50;
+          break;
+        case 'custom':
+          const minAge = parseInt(customMinAge) || 0;
+          const maxAge = parseInt(customMaxAge) || 999;
+          matchesAge = patientAge >= minAge && patientAge <= maxAge;
+          break;
+        default:
+          matchesAge = true;
+      }
+    }
+    
+    return matchesSearch && matchesAge;
+  });
 
   // Handle patient selection for details view
   const handleViewPatient = (patient: Patient) => {
     setSelectedPatient(patient);
     setIsEditing(false); // Close edit form when selecting a new patient
+    setShowMobileDetails(true); // Show details panel on mobile
   };
 
   // Handle patient deletion
@@ -79,7 +118,7 @@ export default function PatientsPage() {
       setIsExporting(true);
       
       // Use the filtered patients if there's a search term, otherwise use all patients
-      const dataToExport = searchTerm ? filteredPatients : patients;
+      const dataToExport = filteredPatients;
       
       // Generate a filename with current date
       const date = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
@@ -95,10 +134,15 @@ export default function PatientsPage() {
     }
   };
 
+  // Toggle back to list view on mobile
+  const handleBackToList = () => {
+    setShowMobileDetails(false);
+  };
+
   // Loading state
   if (isLoading && patients.length === 0) {
     return (
-      <div className="p-6 flex items-center justify-center h-96">
+      <div className="p-4 md:p-6 flex items-center justify-center h-96">
         <div className="text-center">
           <svg className="inline animate-spin h-10 w-10 text-indigo-600 dark:text-indigo-400 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -113,7 +157,7 @@ export default function PatientsPage() {
   // Error state
   if (error) {
     return (
-      <div className="p-6">
+      <div className="p-4 md:p-6">
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 p-4 rounded-lg text-red-700 dark:text-red-300">
           <h3 className="text-lg font-medium mb-2">Error Loading Data</h3>
           <p>{error}</p>
@@ -132,66 +176,172 @@ export default function PatientsPage() {
   }
 
   return (
-    <div className="p-6">
-      <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-800 dark:text-white">Patients Records</h1>
-          <p className="text-gray-600 dark:text-gray-300 mt-2">View and manage patient information</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Search patients..."
-              className="w-full md:w-64 pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
-              <svg className="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+    <div className="p-4 md:p-6">
+      {/* Header Section */}
+      <div className="mb-6">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+          <div>
+            <h1 className="text-2xl font-semibold text-gray-800 dark:text-white">Patients Records</h1>
+            <p className="text-gray-600 dark:text-gray-300 mt-1">
+              {filteredPatients.length} {filteredPatients.length === 1 ? 'record' : 'records'} found
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Link href="/dashboard/patient-form" className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shadow-md transition duration-150 inline-flex items-center">
+              <svg className="h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
+              Add Patient
+            </Link>
+            <button
+              onClick={handleExportToExcel}
+              disabled={isExporting || filteredPatients.length === 0}
+              className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white rounded-lg shadow-md transition duration-150 inline-flex items-center"
+            >
+              {isExporting ? (
+                <>
+                  <svg className="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Exporting...
+                </>
+              ) : (
+                <>
+                  <svg className="h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  Export Excel
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Search and Filter Section */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 mb-6">
+          <div className="flex flex-col md:flex-row md:items-center gap-4">
+            <div className="relative flex-grow">
+              <input
+                type="text"
+                placeholder="Search patients..."
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
+                <svg className="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+            </div>
+            
+            <div className="relative">
+              <button 
+                onClick={() => setIsFilterOpen(!isFilterOpen)}
+                className="w-full md:w-auto px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg inline-flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-600 transition duration-150"
+              >
+                <svg className="h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                </svg>
+                Filters
+                {ageFilter !== 'all' && (
+                  <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800">
+                    {ageFilter === 'custom' && (customMinAge || customMaxAge) ? '2' : '1'}
+                  </span>
+                )}
+              </button>
+              
+              {isFilterOpen && (
+                <div className="absolute z-50 mt-2 w-72 right-0 md:right-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-4">
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Age Range
+                    </label>
+                    <select
+                      value={ageFilter}
+                      onChange={(e) => setAgeFilter(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                    >
+                      <option value="all">All Ages</option>
+                      <option value="under18">Under 18</option>
+                      <option value="18to30">18-30</option>
+                      <option value="31to50">31-50</option>
+                      <option value="over50">Over 50</option>
+                      <option value="custom">Custom Range</option>
+                    </select>
+                  </div>
+                  
+                  {ageFilter === 'custom' && (
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Custom Age Range (Min - Max)
+                      </label>
+                      <div className="flex gap-2">
+                        <input
+                          type="number"
+                          placeholder="Min Age"
+                          value={customMinAge}
+                          onChange={(e) => setCustomMinAge(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                        />
+                        <input
+                          type="number"
+                          placeholder="Max Age"
+                          value={customMaxAge}
+                          onChange={(e) => setCustomMaxAge(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex justify-between">
+                    <button
+                      onClick={() => {
+                        setAgeFilter('all');
+                        setCustomMinAge('');
+                        setCustomMaxAge('');
+                        setIsFilterOpen(false);
+                      }}
+                      className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+                    >
+                      Clear Filters
+                    </button>
+                    <button
+                      onClick={() => setIsFilterOpen(false)}
+                      className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 text-sm"
+                    >
+                      Apply
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
-          <button
-            onClick={handleExportToExcel}
-            disabled={isExporting || patients.length === 0}
-            className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white rounded-lg shadow-md transition duration-150 inline-flex items-center"
-          >
-            {isExporting ? (
-              <>
-                <svg className="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Exporting...
-              </>
-            ) : (
-              <>
-                <svg className="h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                </svg>
-                Export Excel
-              </>
-            )}
-          </button>
-          <Link href="/dashboard/patient-form" className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shadow-md transition duration-150 inline-flex items-center">
-            <svg className="h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            Add Patient
-          </Link>
         </div>
+      </div>
+
+      {/* Mobile View: Toggle between list and details */}
+      <div className="block md:hidden mb-4">
+        {showMobileDetails && selectedPatient && (
+          <button 
+            onClick={handleBackToList}
+            className="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-700 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
+          >
+            <svg className="h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Back to List
+          </button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Patients List */}
-        <div className="lg:col-span-1 bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+        <div className={`lg:col-span-1 bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden ${showMobileDetails ? 'hidden md:block' : 'block'}`}>
           <div className="p-4 border-b border-gray-200 dark:border-gray-700">
             <h2 className="text-lg font-medium text-gray-900 dark:text-white">Patient List</h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              {filteredPatients.length} {filteredPatients.length === 1 ? 'record' : 'records'} found
-            </p>
           </div>
 
           <div className="divide-y divide-gray-200 dark:divide-gray-700 max-h-[600px] overflow-y-auto">
@@ -200,22 +350,24 @@ export default function PatientsPage() {
                 <div 
                   key={patient.id} 
                   className={`p-4 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer ${
-                    selectedPatient?.id === patient.id ? 'bg-gray-100 dark:bg-gray-700' : ''
+                    selectedPatient?.id === patient.id ? 'bg-gray-100 dark:bg-gray-700 border-l-4 border-indigo-500' : ''
                   }`}
                   onClick={() => handleViewPatient(patient)}
                 >
-                  <div className="flex justify-between">
-                    <h3 className="text-sm font-medium text-gray-900 dark:text-white">{patient.name}</h3>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-900 dark:text-white">{patient.name}</h3>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        {patient.diagnosis} | Age: {patient.age}
+                      </p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                        Added: {formatDate(patient.createdAt)}
+                      </p>
+                    </div>
                     <span className="text-xs bg-blue-100 text-blue-800 rounded-full px-2 py-0.5">
                       {patient.hospitalFileNumber}
                     </span>
                   </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    {patient.diagnosis} | Age: {patient.age}
-                  </p>
-                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                    Added: {formatDate(patient.createdAt)}
-                  </p>
                 </div>
               ))
             ) : (
@@ -238,9 +390,9 @@ export default function PatientsPage() {
         </div>
 
         {/* Patient Details */}
-        <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-lg shadow-md">
+        <div className={`lg:col-span-2 bg-white dark:bg-gray-800 rounded-lg shadow-md ${!showMobileDetails ? 'hidden md:block' : 'block'}`}>
           {selectedPatient ? (
-            <div className="p-6">
+            <div className="p-4 md:p-6">
               {!isEditing ? (
                 <>
                   <div className="flex justify-between items-start mb-6">
@@ -281,59 +433,53 @@ export default function PatientsPage() {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                    <div>
-                      <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Personal Information</h3>
-                      <div className="mt-2 border-t border-gray-100 dark:border-gray-700 pt-2">
-                        <dl className="divide-y divide-gray-100 dark:divide-gray-800">
-                          <div className="py-2 grid grid-cols-3">
-                            <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Age</dt>
-                            <dd className="text-sm text-gray-900 dark:text-gray-100 col-span-2">{selectedPatient.age}</dd>
-                          </div>
-                          <div className="py-2 grid grid-cols-3">
-                            <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Sex</dt>
-                            <dd className="text-sm text-gray-900 dark:text-gray-100 col-span-2">{selectedPatient.sex}</dd>
-                          </div>
-                          <div className="py-2 grid grid-cols-3">
-                            <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Mobile</dt>
-                            <dd className="text-sm text-gray-900 dark:text-gray-100 col-span-2">{selectedPatient.mobileNumber}</dd>
-                          </div>
-                        </dl>
+                    <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                      <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Personal Information</h3>
+                      <div className="space-y-3">
+                        <div className="flex justify-between">
+                          <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Age</span>
+                          <span className="text-sm text-gray-900 dark:text-gray-100">{selectedPatient.age}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Sex</span>
+                          <span className="text-sm text-gray-900 dark:text-gray-100">{selectedPatient.sex}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Mobile</span>
+                          <span className="text-sm text-gray-900 dark:text-gray-100">{selectedPatient.mobileNumber}</span>
+                        </div>
                       </div>
                     </div>
 
-                    <div>
-                      <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Medical Information</h3>
-                      <div className="mt-2 border-t border-gray-100 dark:border-gray-700 pt-2">
-                        <dl className="divide-y divide-gray-100 dark:divide-gray-800">
-                          <div className="py-2 grid grid-cols-3">
-                            <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Diagnosis Age</dt>
-                            <dd className="text-sm text-gray-900 dark:text-gray-100 col-span-2">{selectedPatient.ageOfDiagnosis}</dd>
-                          </div>
-                          <div className="py-2 grid grid-cols-3">
-                            <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Diagnosis</dt>
-                            <dd className="text-sm text-gray-900 dark:text-gray-100 col-span-2">{selectedPatient.diagnosis}</dd>
-                          </div>
-                          <div className="py-2 grid grid-cols-3">
-                            <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Treatment</dt>
-                            <dd className="text-sm text-gray-900 dark:text-gray-100 col-span-2">{selectedPatient.treatment}</dd>
-                          </div>
-                          <div className="py-2 grid grid-cols-3">
-                            <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Response</dt>
-                            <dd className="text-sm text-gray-900 dark:text-gray-100 col-span-2">{selectedPatient.response}</dd>
-                          </div>
-                        </dl>
+                    <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                      <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Medical Information</h3>
+                      <div className="space-y-3">
+                        <div className="flex justify-between">
+                          <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Diagnosis Age</span>
+                          <span className="text-sm text-gray-900 dark:text-gray-100">{selectedPatient.ageOfDiagnosis}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Diagnosis</span>
+                          <span className="text-sm text-gray-900 dark:text-gray-100">{selectedPatient.diagnosis}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Treatment</span>
+                          <span className="text-sm text-gray-900 dark:text-gray-100">{selectedPatient.treatment}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Response</span>
+                          <span className="text-sm text-gray-900 dark:text-gray-100">{selectedPatient.response}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
 
                   {/* Notes Section */}
-                  <div>
+                  <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
                     <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Notes</h3>
-                    <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-md">
-                      <p className="text-sm text-gray-800 dark:text-gray-200">
-                        {selectedPatient.note || 'No notes available.'}
-                      </p>
-                    </div>
+                    <p className="text-sm text-gray-800 dark:text-gray-200">
+                      {selectedPatient.note || 'No notes available.'}
+                    </p>
                   </div>
                 </>
               ) : (
