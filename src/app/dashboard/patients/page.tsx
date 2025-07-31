@@ -32,6 +32,140 @@ export default function PatientsPage() {
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
 
+  // Print treatment function
+  const handlePrintTreatment = (patient: Patient) => {
+    // Create a new window for the print document
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      alert('Please allow popups for this website');
+      return;
+    }
+    
+    // Check if patient has necessary fields
+    if (!patient.name || !patient.clinicId) {
+      alert('Patient information is incomplete. Please ensure name and clinic ID are filled.');
+      printWindow.close();
+      return;
+    }
+
+    // Get today's date
+    const today = new Date();
+    const day = String(today.getDate()).padStart(2, '0');
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const year = today.getFullYear();
+    const formattedDate = `${day}/${month}/${year}`;
+
+    // Create content for the print window
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Treatment Card - ${patient.name}</title>
+        <style>
+                     body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: white;
+            direction: ltr; /* Ensure default direction */
+          }
+          .print-container {
+            width: 148mm; /* A5 width */
+            height: 210mm; /* A5 height */
+            margin: 0 auto;
+            position: relative;
+            overflow: hidden;
+            border: none;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+          }
+          .report-image {
+            width: 148mm;
+            display: block;
+            object-fit: contain;
+            object-position: top;
+          }
+          .patient-info {
+            position: absolute;
+            top: 62mm; /* Position for patient name in the card */
+            left: 60mm;
+            font-size: 14px;
+            font-weight: bold;
+            direction: rtl;
+          }
+          .date-info {
+            position: absolute;
+            top: 62mm;
+            left: 20mm;
+            font-size: 14px;
+          }
+          .treatment-info {
+            position: absolute;
+            top: 100mm;
+            left: 20mm;
+            right: 20mm;
+            font-size: 14px;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            text-align: center;
+          }
+          @media print {
+            @page {
+              size: A5;
+              margin: 0;
+            }
+            body {
+              width: 148mm;
+              height: 210mm;
+            }
+            .print-button {
+              display: none;
+            }
+          }
+          .print-button {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 8px 16px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="print-container">
+          <img src="/reportprint.jpg" class="report-image" />
+          <div class="patient-info">
+            ${patient.name}
+          </div>
+          <div class="date-info">
+            ${day} / ${month} / ${year}
+          </div>
+          <div class="treatment-info">
+            <strong>Clinic ID: ${patient.clinicId}</strong><br />
+            <strong>Age: ${patient.age}</strong><br /><br />
+            ${patient.currentTreatment || 'No current treatment specified.'}
+          </div>
+        </div>
+        <button class="print-button" onclick="window.print();return false;">Print</button>
+        <script>
+          // Auto-print
+          window.onload = function() {
+            setTimeout(function() {
+              window.print();
+            }, 500);
+          }
+        </script>
+      </body>
+      </html>
+    `);
+    
+    // Finish writing and close the document
+    printWindow.document.close();
+  };
+
   // Refresh data when component mounts
   useEffect(() => {
     refreshPatients();
@@ -338,64 +472,66 @@ export default function PatientsPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Patients List */}
-        <div className={`lg:col-span-1 bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden ${showMobileDetails ? 'hidden md:block' : 'block'}`}>
-          <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-            <h2 className="text-lg font-medium text-gray-900 dark:text-white">Patient List</h2>
-          </div>
+        {/* Patients List - Only render if not editing */}
+        {!isEditing && (
+          <div className={`lg:col-span-1 bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden ${showMobileDetails ? 'hidden md:block' : 'block'}`}>
+            <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+              <h2 className="text-lg font-medium text-gray-900 dark:text-white">Patient List</h2>
+            </div>
 
-          <div className="divide-y divide-gray-200 dark:divide-gray-700 max-h-[600px] overflow-y-auto">
-            {filteredPatients.length > 0 ? (
-              filteredPatients.map((patient) => (
-                <div 
-                  key={patient.id} 
-                  className={`p-4 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer ${
-                    selectedPatient?.id === patient.id ? 'bg-gray-100 dark:bg-gray-700 border-l-4 border-indigo-500' : ''
-                  }`}
-                  onClick={() => handleViewPatient(patient)}
-                >
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="text-sm font-medium text-gray-900 dark:text-white">{patient.name}</h3>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        {patient.diagnosis} | Age: {patient.age}
-                      </p>
-                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                        Added: {formatDate(patient.createdAt)}
-                      </p>
-                    </div>
-                    <div className="flex flex-col items-end gap-1">
-                      <span className="text-xs bg-blue-100 text-blue-800 rounded-full px-2 py-0.5 font-medium">
-                        {patient.clinicId}
-                      </span>
-                      <span className="text-xs bg-gray-100 text-gray-700 rounded-full px-2 py-0.5">
-                        {patient.hospitalFileNumber}
-                      </span>
+            <div className="divide-y divide-gray-200 dark:divide-gray-700 max-h-[600px] overflow-y-auto">
+              {filteredPatients.length > 0 ? (
+                filteredPatients.map((patient) => (
+                  <div 
+                    key={patient.id} 
+                    className={`p-4 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer ${
+                      selectedPatient?.id === patient.id ? 'bg-gray-100 dark:bg-gray-700 border-l-4 border-indigo-500' : ''
+                    }`}
+                    onClick={() => handleViewPatient(patient)}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="text-sm font-medium text-gray-900 dark:text-white">{patient.name}</h3>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          {patient.diagnosis} | Age: {patient.age}
+                        </p>
+                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                          Added: {formatDate(patient.createdAt)}
+                        </p>
+                      </div>
+                      <div className="flex flex-col items-end gap-1">
+                        <span className="text-xs bg-blue-100 text-blue-800 rounded-full px-2 py-0.5 font-medium">
+                          {patient.clinicId}
+                        </span>
+                        <span className="text-xs bg-gray-100 text-gray-700 rounded-full px-2 py-0.5">
+                          {patient.hospitalFileNumber}
+                        </span>
+                      </div>
                     </div>
                   </div>
+                ))
+              ) : (
+                <div className="p-8 text-center text-gray-500 dark:text-gray-400">
+                  No patients found. Please add a patient or adjust your search.
                 </div>
-              ))
-            ) : (
-              <div className="p-8 text-center text-gray-500 dark:text-gray-400">
-                No patients found. Please add a patient or adjust your search.
+              )}
+            </div>
+            
+            {/* Show loading indicator when refreshing data */}
+            {isLoading && patients.length > 0 && (
+              <div className="p-2 bg-gray-50 dark:bg-gray-700 text-center">
+                <svg className="inline animate-spin h-4 w-4 text-indigo-600 dark:text-indigo-400 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span className="text-xs text-gray-600 dark:text-gray-300">Refreshing...</span>
               </div>
             )}
           </div>
-          
-          {/* Show loading indicator when refreshing data */}
-          {isLoading && patients.length > 0 && (
-            <div className="p-2 bg-gray-50 dark:bg-gray-700 text-center">
-              <svg className="inline animate-spin h-4 w-4 text-indigo-600 dark:text-indigo-400 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              <span className="text-xs text-gray-600 dark:text-gray-300">Refreshing...</span>
-            </div>
-          )}
-        </div>
+        )}
 
         {/* Patient Details */}
-        <div className={`lg:col-span-2 bg-white dark:bg-gray-800 rounded-lg shadow-md ${!showMobileDetails ? 'hidden md:block' : 'block'}`}>
+        <div className={`${isEditing ? 'lg:col-span-3' : 'lg:col-span-2'} bg-white dark:bg-gray-800 rounded-lg shadow-md ${!showMobileDetails ? 'hidden md:block' : 'block'}`}>
           {selectedPatient ? (
             <div className="p-4 md:p-6">
               {!isEditing ? (
@@ -480,7 +616,25 @@ export default function PatientsPage() {
                           <span className="text-sm text-gray-900 dark:text-gray-100">{selectedPatient.treatment}</span>
                         </div>
                         <div className="flex flex-col">
-                          <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Current Treatment</span>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Current Treatment</span>
+                            <button
+                              onClick={() => {
+                                if (selectedPatient.currentTreatment) {
+                                  handlePrintTreatment(selectedPatient);
+                                } else {
+                                  alert('Please add current treatment information before printing.');
+                                }
+                              }}
+                              title="Print treatment card for this patient"
+                              className="flex items-center px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs"
+                            >
+                              <svg className="h-3 w-3 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                              </svg>
+                              Print
+                            </button>
+                          </div>
                           <div className="mt-1 bg-white dark:bg-gray-800 p-2 rounded border border-gray-200 dark:border-gray-600">
                             <p className="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap">{selectedPatient.currentTreatment || 'No current treatment specified.'}</p>
                           </div>
@@ -507,7 +661,18 @@ export default function PatientsPage() {
                 </>
               ) : (
                 <div>
-                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Edit Patient</h2>
+                  <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Edit Patient</h2>
+                    <button
+                      onClick={() => setIsEditing(false)}
+                      className="flex items-center text-sm px-3 py-1 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-600"
+                    >
+                      <svg className="h-4 w-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                      </svg>
+                      Back to View
+                    </button>
+                  </div>
                   <PatientEditForm 
                     patient={selectedPatient}
                     onSubmit={handleEditSubmit}
