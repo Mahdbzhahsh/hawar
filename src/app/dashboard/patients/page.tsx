@@ -364,9 +364,14 @@ export default function PatientsPage() {
                         Added: {formatDate(patient.createdAt)}
                       </p>
                     </div>
-                    <span className="text-xs bg-blue-100 text-blue-800 rounded-full px-2 py-0.5">
-                      {patient.hospitalFileNumber}
-                    </span>
+                    <div className="flex flex-col items-end gap-1">
+                      <span className="text-xs bg-blue-100 text-blue-800 rounded-full px-2 py-0.5 font-medium">
+                        {patient.clinicId}
+                      </span>
+                      <span className="text-xs bg-gray-100 text-gray-700 rounded-full px-2 py-0.5">
+                        {patient.hospitalFileNumber}
+                      </span>
+                    </div>
                   </div>
                 </div>
               ))
@@ -398,8 +403,16 @@ export default function PatientsPage() {
                   <div className="flex justify-between items-start mb-6">
                     <div>
                       <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{selectedPatient.name}</h2>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                        File #: {selectedPatient.hospitalFileNumber} | Added: {formatDate(selectedPatient.createdAt)}
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        <span className="px-3 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-full font-medium text-sm">
+                          Clinic ID: {selectedPatient.clinicId}
+                        </span>
+                        <span className="px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-full text-sm">
+                          File #: {selectedPatient.hospitalFileNumber}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                        Added: {formatDate(selectedPatient.createdAt)}
                       </p>
                     </div>
                     <div className="flex space-x-2">
@@ -465,6 +478,14 @@ export default function PatientsPage() {
                         <div className="flex justify-between">
                           <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Treatment</span>
                           <span className="text-sm text-gray-900 dark:text-gray-100">{selectedPatient.treatment}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Current Treatment</span>
+                          <span className="text-sm text-gray-900 dark:text-gray-100">{selectedPatient.currentTreatment}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Clinic ID</span>
+                          <span className="text-sm text-gray-900 dark:text-gray-100">{selectedPatient.clinicId}</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Response</span>

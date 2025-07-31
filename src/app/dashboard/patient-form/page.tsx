@@ -19,8 +19,10 @@ export default function PatientForm() {
     ageOfDiagnosis: '',
     diagnosis: '',
     treatment: '',
+    currentTreatment: '',
     response: '',
     note: '',
+    // clinicId is not included here as it's auto-generated
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -37,7 +39,8 @@ export default function PatientForm() {
     
     try {
       setFormSubmitted(true);
-      await addPatient(formData);
+      // Since clinicId is auto-generated on the server, we don't include it in the form data
+      await addPatient({...formData, clinicId: ''});
       
       // Reset form after submission
       setTimeout(() => {
@@ -50,6 +53,7 @@ export default function PatientForm() {
           ageOfDiagnosis: '',
           diagnosis: '',
           treatment: '',
+          currentTreatment: '',
           response: '',
           note: '',
         });
@@ -89,7 +93,8 @@ export default function PatientForm() {
       ) : null}
 
       <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="flex flex-col md:flex-row gap-6">
+          <div className="w-full md:w-2/3 grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Name */}
           <div>
             <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -106,22 +111,16 @@ export default function PatientForm() {
               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed"
             />
           </div>
-
-          {/* Age */}
+          
+          {/* Clinic ID (display only) */}
           <div>
-            <label htmlFor="age" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Age
+            <label htmlFor="clinicId" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Clinic ID
             </label>
-            <input
-              type="text"
-              id="age"
-              name="age"
-              value={formData.age}
-              onChange={handleChange}
-              required
-              disabled={isLoading || formSubmitted}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed"
-            />
+            <div className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 font-medium">
+              Auto-generated after submission
+            </div>
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Format: [PatientNumber(2-digits)][DDMMYY]</p>
           </div>
 
           {/* Hospital File Number */}
@@ -135,7 +134,22 @@ export default function PatientForm() {
               name="hospitalFileNumber"
               value={formData.hospitalFileNumber}
               onChange={handleChange}
-              required
+              disabled={isLoading || formSubmitted}
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed"
+            />
+          </div>
+          
+          {/* Age */}
+          <div>
+            <label htmlFor="age" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Age
+            </label>
+            <input
+              type="text"
+              id="age"
+              name="age"
+              value={formData.age}
+              onChange={handleChange}
               disabled={isLoading || formSubmitted}
               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed"
             />
@@ -152,7 +166,6 @@ export default function PatientForm() {
               name="mobileNumber"
               value={formData.mobileNumber}
               onChange={handleChange}
-              required
               disabled={isLoading || formSubmitted}
               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed"
             />
@@ -168,7 +181,6 @@ export default function PatientForm() {
               name="sex"
               value={formData.sex}
               onChange={handleChange}
-              required
               disabled={isLoading || formSubmitted}
               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed"
             >
@@ -190,7 +202,6 @@ export default function PatientForm() {
               name="ageOfDiagnosis"
               value={formData.ageOfDiagnosis}
               onChange={handleChange}
-              required
               disabled={isLoading || formSubmitted}
               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed"
             />
@@ -207,7 +218,6 @@ export default function PatientForm() {
               name="diagnosis"
               value={formData.diagnosis}
               onChange={handleChange}
-              required
               disabled={isLoading || formSubmitted}
               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed"
             />
@@ -224,7 +234,22 @@ export default function PatientForm() {
               name="treatment"
               value={formData.treatment}
               onChange={handleChange}
-              required
+              disabled={isLoading || formSubmitted}
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed"
+            />
+          </div>
+
+          {/* Current Treatment */}
+          <div>
+            <label htmlFor="currentTreatment" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Current Treatment
+            </label>
+            <input
+              type="text"
+              id="currentTreatment"
+              name="currentTreatment"
+              value={formData.currentTreatment}
+              onChange={handleChange}
               disabled={isLoading || formSubmitted}
               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed"
             />
@@ -232,7 +257,8 @@ export default function PatientForm() {
         </div>
 
         {/* Response */}
-        <div className="mt-6">
+        {/* Response */}
+        <div>
           <label htmlFor="response" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Response
           </label>
@@ -242,14 +268,14 @@ export default function PatientForm() {
             name="response"
             value={formData.response}
             onChange={handleChange}
-            required
             disabled={isLoading || formSubmitted}
             className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed"
           />
         </div>
-
-        {/* Notes */}
-        <div className="mt-6">
+      </div>
+      
+      {/* Notes - Right column */}
+      <div className="w-full md:w-1/3">
           <label htmlFor="note" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Notes
           </label>
@@ -258,9 +284,10 @@ export default function PatientForm() {
             name="note"
             value={formData.note}
             onChange={handleChange}
-            rows={3}
+            rows={15}
             disabled={isLoading || formSubmitted}
-            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed"
+            className="w-full h-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed"
+            style={{ minHeight: "370px" }}
           />
         </div>
 

@@ -4,16 +4,18 @@ DROP TABLE IF EXISTS public.patients;
 -- Create patients table without foreign key constraints
 CREATE TABLE public.patients (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  name TEXT NOT NULL,
-  age TEXT,
-  hospital_file_number TEXT,
-  mobile_number TEXT,
-  sex TEXT,
-  age_of_diagnosis TEXT,
-  diagnosis TEXT,
-  treatment TEXT,
-  response TEXT,
-  note TEXT,
+  name TEXT NOT NULL, -- Only the name is required
+  age TEXT DEFAULT '',
+  hospital_file_number TEXT DEFAULT '',
+  mobile_number TEXT DEFAULT '',
+  sex TEXT DEFAULT '',
+  age_of_diagnosis TEXT DEFAULT '',
+  diagnosis TEXT DEFAULT '',
+  treatment TEXT DEFAULT '',
+  current_treatment TEXT DEFAULT '',
+  clinic_id TEXT,
+  response TEXT DEFAULT '',
+  note TEXT DEFAULT '',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   user_id UUID
 );

@@ -20,8 +20,10 @@ export default function PatientEditForm({ patient, onSubmit, onCancel, isLoading
     ageOfDiagnosis: patient.ageOfDiagnosis,
     diagnosis: patient.diagnosis,
     treatment: patient.treatment,
+    currentTreatment: patient.currentTreatment || '',
     response: patient.response,
     note: patient.note || '',
+    // clinicId is read-only, not included in editable form
   });
   
   const [error, setError] = useState<string | null>(null);
@@ -38,8 +40,10 @@ export default function PatientEditForm({ patient, onSubmit, onCancel, isLoading
       ageOfDiagnosis: patient.ageOfDiagnosis,
       diagnosis: patient.diagnosis,
       treatment: patient.treatment,
+      currentTreatment: patient.currentTreatment || '',
       response: patient.response,
       note: patient.note || '',
+      // clinicId is read-only, not included in editable form
     });
   }, [patient]);
 
@@ -222,6 +226,33 @@ export default function PatientEditForm({ patient, onSubmit, onCancel, isLoading
             disabled={isLoading}
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed"
           />
+        </div>
+
+        {/* Current Treatment */}
+        <div>
+          <label htmlFor="currentTreatment" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Current Treatment
+          </label>
+          <input
+            type="text"
+            id="currentTreatment"
+            name="currentTreatment"
+            value={formData.currentTreatment}
+            onChange={handleChange}
+            required
+            disabled={isLoading}
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed"
+          />
+        </div>
+        
+        {/* Clinic ID (Read-only) */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Clinic ID
+          </label>
+          <div className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 font-medium text-sm">
+            {patient.clinicId || 'Not assigned'}
+          </div>
         </div>
       </div>
 

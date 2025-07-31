@@ -15,6 +15,8 @@ export interface Patient {
   ageOfDiagnosis: string;
   diagnosis: string;
   treatment: string;
+  currentTreatment: string;
+  clinicId: string;
   response: string;
   note: string;
   createdAt: string;
@@ -32,6 +34,8 @@ interface PatientRecord {
   age_of_diagnosis: string;
   diagnosis: string;
   treatment: string;
+  current_treatment: string;
+  clinic_id: string;
   response: string;
   note: string;
   created_at: string;
@@ -119,6 +123,8 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
           ageOfDiagnosis: p.age_of_diagnosis,
           diagnosis: p.diagnosis,
           treatment: p.treatment,
+          currentTreatment: p.current_treatment || '',
+          clinicId: p.clinic_id || '',
           response: p.response,
           note: p.note,
           createdAt: p.created_at,
@@ -154,20 +160,53 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
         throw new Error('Not authenticated');
       }
 
+      // Generate Clinic ID: [PatientCount][DDMMYY]
+      // 1. Get today's date in DDMMYY format
+      const today = new Date();
+      const day = String(today.getDate()).padStart(2, '0');
+      const month = String(today.getMonth() + 1).padStart(2, '0');
+      const year = String(today.getFullYear()).slice(-2);
+      const dateFormat = `${day}${month}${year}`;
+      
+      // 2. Count patients added today to determine count
+      const startOfDay = new Date(today);
+      startOfDay.setHours(0, 0, 0, 0);
+      
+      const { data: todaysPatients, error: countError } = await supabase
+        .from('patients')
+        .select('id')
+        .gte('created_at', startOfDay.toISOString());
+        
+      if (countError) {
+        console.error('Error counting today\'s patients:', countError);
+        throw new Error(`Database error: ${countError.message}`);
+      }
+      
+      // Add 1 to the count (zero-indexed array)
+      const patientCount = (todaysPatients?.length || 0) + 1;
+      
+      // Create clinic ID with 2-digit patient count (padded with leading zero if needed)
+      const patientCountFormatted = String(patientCount).padStart(2, '0');
+      
+      // Create clinic ID
+      const clinicId = `${patientCountFormatted}${dateFormat}`;
+      
       // Always use Supabase for data storage
       const { data, error } = await supabase
         .from('patients')
         .insert({
-          name: patientData.name,
-          age: patientData.age,
-          hospital_file_number: patientData.hospitalFileNumber,
-          mobile_number: patientData.mobileNumber,
-          sex: patientData.sex,
-          age_of_diagnosis: patientData.ageOfDiagnosis,
-          diagnosis: patientData.diagnosis,
-          treatment: patientData.treatment,
-          response: patientData.response,
-          note: patientData.note,
+          name: patientData.name, // Only name is required
+          age: patientData.age || '',
+          hospital_file_number: patientData.hospitalFileNumber || '',
+          mobile_number: patientData.mobileNumber || '',
+          sex: patientData.sex || '',
+          age_of_diagnosis: patientData.ageOfDiagnosis || '',
+          diagnosis: patientData.diagnosis || '',
+          treatment: patientData.treatment || '',
+          current_treatment: patientData.currentTreatment || '',
+          clinic_id: clinicId,
+          response: patientData.response || '',
+          note: patientData.note || '',
           user_id: userId
         })
         .select();
@@ -189,6 +228,8 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
           ageOfDiagnosis: data[0].age_of_diagnosis,
           diagnosis: data[0].diagnosis,
           treatment: data[0].treatment,
+          currentTreatment: data[0].current_treatment || '',
+          clinicId: data[0].clinic_id || '',
           response: data[0].response,
           note: data[0].note,
           createdAt: data[0].created_at,
@@ -227,6 +268,8 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
       if (patientData.ageOfDiagnosis !== undefined) dbData.age_of_diagnosis = patientData.ageOfDiagnosis;
       if (patientData.diagnosis !== undefined) dbData.diagnosis = patientData.diagnosis;
       if (patientData.treatment !== undefined) dbData.treatment = patientData.treatment;
+      if (patientData.currentTreatment !== undefined) dbData.current_treatment = patientData.currentTreatment;
+      // Note: we don't allow editing clinicId as it's system-generated
       if (patientData.response !== undefined) dbData.response = patientData.response;
       if (patientData.note !== undefined) dbData.note = patientData.note;
 

@@ -13,6 +13,8 @@ export const exportToExcel = (patients: Patient[], fileName: string = 'patients-
       'Age of Diagnosis': patient.ageOfDiagnosis,
       'Diagnosis': patient.diagnosis,
       'Treatment': patient.treatment,
+      'Current Treatment': patient.currentTreatment,
+      'Clinic ID': patient.clinicId,
       'Response': patient.response,
       'Note': patient.note,
       'Created At': new Date(patient.createdAt).toLocaleDateString()
@@ -29,6 +31,8 @@ export const exportToExcel = (patients: Patient[], fileName: string = 'patients-
     { wch: 10 }, // Age of Diagnosis
     { wch: 25 }, // Diagnosis
     { wch: 25 }, // Treatment
+    { wch: 25 }, // Current Treatment
+    { wch: 10 }, // Clinic ID
     { wch: 15 }, // Response
     { wch: 30 }, // Note
     { wch: 12 }  // Created At
