@@ -22,15 +22,92 @@ export default function PatientForm() {
     currentTreatment: '',
     response: '',
     note: '',
+    tableData: '',
     // clinicId is not included here as it's auto-generated
   });
+  
+  // State for table cells with dynamic sizing (default 8x8)
+  const [tableCells, setTableCells] = useState(
+    Array(8).fill(null).map(() => Array(8).fill(''))
+  );
+  
+  // Functions to add or remove rows/columns from the table
+  const addTableRow = () => {
+    const newRow = Array(tableCells[0].length).fill('');
+    const newTableCells = [...tableCells, newRow];
+    setTableCells(newTableCells);
+    
+    // Update tableData in formData
+    const tableDataString = JSON.stringify(newTableCells);
+    setFormData(prev => ({
+      ...prev,
+      tableData: tableDataString
+    }));
+  };
+  
+  const addTableColumn = () => {
+    const newTableCells = tableCells.map(row => [...row, '']);
+    setTableCells(newTableCells);
+    
+    // Update tableData in formData
+    const tableDataString = JSON.stringify(newTableCells);
+    setFormData(prev => ({
+      ...prev,
+      tableData: tableDataString
+    }));
+  };
+  
+  const removeTableRow = () => {
+    if (tableCells.length <= 1) return; // Don't remove the last row
+    
+    const newTableCells = tableCells.slice(0, -1); // Remove the last row
+    setTableCells(newTableCells);
+    
+    // Update tableData in formData
+    const tableDataString = JSON.stringify(newTableCells);
+    setFormData(prev => ({
+      ...prev,
+      tableData: tableDataString
+    }));
+  };
+  
+  const removeTableColumn = () => {
+    if (tableCells[0].length <= 1) return; // Don't remove the last column
+    
+    const newTableCells = tableCells.map(row => row.slice(0, -1)); // Remove the last column
+    setTableCells(newTableCells);
+    
+    // Update tableData in formData
+    const tableDataString = JSON.stringify(newTableCells);
+    setFormData(prev => ({
+      ...prev,
+      tableData: tableDataString
+    }));
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    
+    // Handle table cell changes
+    if (name.startsWith('tableCell-')) {
+      const [_, rowIndex, colIndex] = name.split('-');
+      const newTableCells = [...tableCells];
+      newTableCells[Number(rowIndex)][Number(colIndex)] = value;
+      setTableCells(newTableCells);
+      
+      // Convert table data to JSON string for storage
+      const tableDataString = JSON.stringify(newTableCells);
+      setFormData(prev => ({
+        ...prev,
+        tableData: tableDataString
+      }));
+    } else {
+      // Handle regular form fields
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -56,7 +133,10 @@ export default function PatientForm() {
           currentTreatment: '',
           response: '',
           note: '',
+          tableData: '',
         });
+        // Reset table cells
+        setTableCells(Array(8).fill(null).map(() => Array(8).fill('')));
         setFormSubmitted(false);
         router.push('/dashboard/patients'); // Redirect to patients list
       }, 1500);
@@ -342,6 +422,111 @@ export default function PatientForm() {
                       placeholder="Enter any additional notes or observations about the patient..."
                     />
                   </div>
+                </div>
+                
+                {/* Table Section with Dynamic Sizing */}
+                <div className="mt-8">
+                  <div className="flex items-center justify-between mb-4 pb-2 border-b border-gray-200 dark:border-gray-700">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                      Additional Data Table
+                    </h3>
+                    <div className="flex space-x-2">
+                      <div className="flex space-x-1">
+                        <button
+                          type="button"
+                          onClick={addTableColumn}
+                          disabled={isLoading || formSubmitted}
+                          className="flex items-center px-3 py-1.5 text-sm bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 rounded-l-lg border border-indigo-200 dark:border-indigo-800 focus:outline-none disabled:opacity-70"
+                          title="Add column"
+                        >
+                          <svg className="h-4 w-4 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2zM3 16a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2z" />
+                          </svg>
+                          Add Col
+                        </button>
+                        <button
+                          type="button"
+                          onClick={removeTableColumn}
+                          disabled={isLoading || formSubmitted || tableCells[0].length <= 1}
+                          className="flex items-center px-3 py-1.5 text-sm bg-red-50 hover:bg-red-100 dark:bg-red-900/30 dark:hover:bg-red-900/50 text-red-700 dark:text-red-300 rounded-r-lg border border-red-200 dark:border-red-800 focus:outline-none disabled:opacity-50"
+                          title="Remove column"
+                        >
+                          <svg className="h-4 w-4 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm0 6a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2zm0 6a1 1 0 011-1h6a1 1 0 110 2H4a1 1 0 01-1-1v-1z" clipRule="evenodd" />
+                          </svg>
+                          Del Col
+                        </button>
+                      </div>
+                      
+                      <div className="flex space-x-1">
+                        <button
+                          type="button"
+                          onClick={addTableRow}
+                          disabled={isLoading || formSubmitted}
+                          className="flex items-center px-3 py-1.5 text-sm bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 rounded-l-lg border border-indigo-200 dark:border-indigo-800 focus:outline-none disabled:opacity-70"
+                          title="Add row"
+                        >
+                          <svg className="h-4 w-4 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM14 11a1 1 0 011 1v1h1a1 1 0 110 2h-1v1a1 1 0 11-2 0v-1h-1a1 1 0 110-2h1v-1a1 1 0 011-1z" />
+                          </svg>
+                          Add Row
+                        </button>
+                        <button
+                          type="button"
+                          onClick={removeTableRow}
+                          disabled={isLoading || formSubmitted || tableCells.length <= 1}
+                          className="flex items-center px-3 py-1.5 text-sm bg-red-50 hover:bg-red-100 dark:bg-red-900/30 dark:hover:bg-red-900/50 text-red-700 dark:text-red-300 rounded-r-lg border border-red-200 dark:border-red-800 focus:outline-none disabled:opacity-50"
+                          title="Remove row"
+                        >
+                          <svg className="h-4 w-4 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h6a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
+                          </svg>
+                          Del Row
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="overflow-x-auto border border-gray-300 dark:border-gray-700 rounded-lg shadow-sm">
+                    <table className="w-full border-collapse">
+                      <thead>
+                        <tr>
+                          {tableCells[0].map((_, colIndex) => (
+                            <th 
+                              key={colIndex} 
+                              className="border border-gray-300 dark:border-gray-600 px-3 py-2 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 text-sm font-medium"
+                            >
+                              C{colIndex + 1}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {tableCells.map((row, rowIndex) => (
+                          <tr key={rowIndex}>
+                            {row.map((cell, colIndex) => (
+                              <td 
+                                key={`${rowIndex}-${colIndex}`} 
+                                className="border border-gray-300 dark:border-gray-600 px-2 py-1 bg-white dark:bg-gray-800"
+                              >
+                                <input
+                                  type="text"
+                                  name={`tableCell-${rowIndex}-${colIndex}`}
+                                  value={cell}
+                                  onChange={handleChange}
+                                  disabled={isLoading || formSubmitted}
+                                  className="w-full px-2 py-1 bg-transparent text-gray-900 dark:text-white focus:outline-none text-sm"
+
+                                />
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                    Optional: Add any additional data in this table. Use the buttons above to add rows or columns.
+                  </p>
                 </div>
               </div>
 

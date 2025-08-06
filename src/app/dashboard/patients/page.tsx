@@ -19,6 +19,8 @@ export default function PatientsPage() {
   const [customMinAge, setCustomMinAge] = useState<string>('');
   const [customMaxAge, setCustomMaxAge] = useState<string>('');
   const [showCustomAgeInputs, setShowCustomAgeInputs] = useState(false);
+  // New filter state
+  const [activeFilter, setActiveFilter] = useState<string>('all'); // Current active filter field
 
   // Format date for display
   const formatDate = (dateString: string) => {
@@ -48,79 +50,155 @@ export default function PatientsPage() {
       return;
     }
 
-    // Get today's date
-    const today = new Date();
-    const day = String(today.getDate()).padStart(2, '0');
-    const month = String(today.getMonth() + 1).padStart(2, '0');
-    const year = today.getFullYear();
-    const formattedDate = `${day}/${month}/${year}`;
-
     // Create content for the print window
     printWindow.document.write(`
       <!DOCTYPE html>
       <html>
       <head>
         <title>Treatment Card - ${patient.name}</title>
-        <style>
-                     body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background: white;
-            direction: ltr; /* Ensure default direction */
-          }
-          .print-container {
-            width: 148mm; /* A5 width */
-            height: 210mm; /* A5 height */
-            margin: 0 auto;
-            position: relative;
-            overflow: hidden;
-            border: none;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-          }
-          .report-image {
-            width: 148mm;
-            display: block;
-            object-fit: contain;
-            object-position: top;
-          }
-          .patient-info {
-            position: absolute;
-            top: 62mm; /* Position for patient name in the card */
-            left: 60mm;
-            font-size: 14px;
-            font-weight: bold;
-            direction: rtl;
-          }
-          .date-info {
-            position: absolute;
-            top: 62mm;
-            left: 20mm;
-            font-size: 14px;
-          }
-          .treatment-info {
-            position: absolute;
-            top: 100mm;
-            left: 20mm;
-            right: 20mm;
-            font-size: 14px;
-            line-height: 1.5;
-            white-space: pre-wrap;
-            text-align: center;
-          }
-          @media print {
-            @page {
-              size: A5;
+                  <style>
+            /* Reset all margins and paddings */
+            * {
               margin: 0;
+              padding: 0;
+              box-sizing: border-box;
             }
-            body {
-              width: 148mm;
-              height: 210mm;
+            
+            html, body {
+              width: 100%;
+              height: 100%;
+              margin: 0;
+              padding: 0;
+              background: white;
+              font-family: Arial, sans-serif;
+              overflow: hidden;
             }
-            .print-button {
-              display: none;
+            
+            .print-container {
+              width: 210mm; /* A5 landscape width */
+              height: 148mm; /* A5 landscape height */
+              position: relative;
+              border: none;
+              display: flex;
+              margin: 0 auto;
+              background: white;
+              page-break-inside: avoid;
+              page-break-after: always;
             }
-          }
+            
+            .report-image {
+              width: 100%;
+              height: 100%;
+              display: block;
+              position: absolute;
+              top: 0;
+              left: 0;
+            }
+            
+            /* Left box container */
+            .left-box {
+              position: absolute;
+              top: 0;
+              left: 0;
+              width: 50%;
+              height: 100%;
+              padding: 20px 30px;
+              box-sizing: border-box;
+            }
+            
+            /* Name field */
+            .name-row {
+              margin-top: 22px;
+              margin-bottom: 8px;
+              display: flex;
+            }
+            .name-label {
+              font-size: 16px;
+              font-weight: bold;
+              margin-right: 6px;
+              min-width: 60px;
+            }
+            .name-value {
+              font-size: 16px;
+            }
+            
+            /* Age and clinic ID row */
+            .details-row {
+              display: flex;
+              justify-content: space-between;
+              margin-bottom: 20px;
+            }
+            .age-container {
+              display: flex;
+            }
+            .age-label {
+              font-size: 16px;
+              font-weight: bold;
+              margin-right: 6px;
+              min-width: 45px;
+            }
+            .age-value {
+              font-size: 16px;
+            }
+            .clinic-container {
+              display: flex;
+              margin-right: 0;
+            }
+            .clinic-id-label {
+              font-size: 16px;
+              font-weight: bold;
+              margin-right: 6px;
+            }
+            .clinic-id-value {
+              font-size: 16px;
+            }
+            
+            /* Separator line */
+            .separator {
+              border-bottom: 1px dashed #000;
+              margin-bottom: 20px;
+              width: 100%;
+            }
+            
+            /* Current treatment */
+            .treatment-content {
+              font-size: 16px;
+              line-height: 1.4;
+              white-space: pre-wrap;
+            }
+            
+            @media print {
+              @page {
+                size: A5 landscape;
+                margin: 0 !important;
+                padding: 0 !important;
+                border: none !important;
+              }
+              
+              html, body {
+                width: 210mm;
+                height: 148mm;
+                margin: 0 !important;
+                padding: 0 !important;
+                overflow: hidden;
+                background: white;
+              }
+              
+              .print-container {
+                width: 100%;
+                height: 100%;
+                margin: 0 !important;
+                padding: 0 !important;
+                position: absolute;
+                top: 0;
+                left: 0;
+              }
+              
+              .print-button {
+                display: none;
+              }
+            }
+          
           .print-button {
             position: fixed;
             top: 10px;
@@ -137,25 +215,61 @@ export default function PatientsPage() {
       <body>
         <div class="print-container">
           <img src="/reportprint.jpg" class="report-image" />
-          <div class="patient-info">
-            ${patient.name}
-          </div>
-          <div class="date-info">
-            ${day} / ${month} / ${year}
-          </div>
-          <div class="treatment-info">
-            <strong>Clinic ID: ${patient.clinicId}</strong><br />
-            <strong>Age: ${patient.age}</strong><br /><br />
-            ${patient.currentTreatment || 'No current treatment specified.'}
+          
+          <div class="left-box">
+            <!-- Name field -->
+            <div class="name-row">
+              <div class="name-label">Name:</div>
+              <div class="name-value">${patient.name}</div>
+            </div>
+            
+            <!-- Age and clinic ID row -->
+            <div class="details-row">
+              <div class="age-container">
+                <div class="age-label">Age:</div>
+                <div class="age-value">${patient.age}</div>
+              </div>
+              
+              <div class="clinic-container">
+                <div class="clinic-id-label">clinic ID:</div>
+                <div class="clinic-id-value">${patient.clinicId}</div>
+              </div>
+            </div>
+            
+            <!-- Separator line -->
+            <div class="separator"></div>
+            
+            <!-- Current treatment (without label) -->
+            <div class="treatment-content">${patient.currentTreatment || 'No current treatment specified.'}</div>
           </div>
         </div>
+        
         <button class="print-button" onclick="window.print();return false;">Print</button>
         <script>
-          // Auto-print
+          // Auto-print with better fit for A5 landscape
           window.onload = function() {
+            // Force the window to be exactly A5 landscape size
+            document.documentElement.style.width = '210mm';
+            document.documentElement.style.height = '148mm';
+            document.body.style.width = '210mm';
+            document.body.style.height = '148mm';
+            
+            // Remove any browser-specific margins and borders
+            document.body.style.margin = '0';
+            document.body.style.padding = '0';
+            document.body.style.border = 'none';
+            document.body.style.overflow = 'hidden';
+            
+            // Apply browser-specific overrides to remove margins
+            // This helps with Chrome's default print margins
+            const style = document.createElement('style');
+            style.textContent = "@media print { @page { margin: 0 !important; } body { margin: 0 !important; } }";
+            document.head.appendChild(style);
+            
+            // Trigger print after ensuring layout is complete
             setTimeout(function() {
               window.print();
-            }, 500);
+            }, 800);
           }
         </script>
       </body>
@@ -171,13 +285,62 @@ export default function PatientsPage() {
     refreshPatients();
   }, []);
 
-  // Filter patients based on search term and age filter
+  // Filter patients based on search term, active filter field, and age filter
   const filteredPatients = patients.filter(patient => {
-    // Text search filter
-    const matchesSearch = 
-      patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      patient.hospitalFileNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      patient.diagnosis.toLowerCase().includes(searchTerm.toLowerCase());
+    // Text search filter based on the active filter field
+    let matchesSearch = true;
+    
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      
+      if (activeFilter === 'all') {
+        // Search all fields
+        matchesSearch = Boolean(
+          patient.name.toLowerCase().includes(searchLower) ||
+          patient.hospitalFileNumber.toLowerCase().includes(searchLower) ||
+          patient.diagnosis.toLowerCase().includes(searchLower) ||
+          (patient.age && patient.age.toString().toLowerCase().includes(searchLower)) ||
+          (patient.treatment && patient.treatment.toLowerCase().includes(searchLower)) ||
+          (patient.sex && patient.sex.toLowerCase().includes(searchLower)) ||
+          (patient.response && patient.response.toLowerCase().includes(searchLower)) ||
+          (patient.mobileNumber && patient.mobileNumber.toLowerCase().includes(searchLower)) ||
+          (patient.clinicId && patient.clinicId.toLowerCase().includes(searchLower))
+        );
+      } else {
+        // Search specific field based on activeFilter
+        switch (activeFilter) {
+          case 'name':
+            matchesSearch = Boolean(patient.name.toLowerCase().includes(searchLower));
+            break;
+          case 'age':
+            matchesSearch = Boolean(patient.age && patient.age.toString().toLowerCase().includes(searchLower));
+            break;
+          case 'diagnosis':
+            matchesSearch = Boolean(patient.diagnosis.toLowerCase().includes(searchLower));
+            break;
+          case 'treatment':
+            matchesSearch = Boolean(patient.treatment && patient.treatment.toLowerCase().includes(searchLower));
+            break;
+          case 'gender':
+            matchesSearch = Boolean(patient.sex && patient.sex.toLowerCase().includes(searchLower));
+            break;
+          case 'response':
+            matchesSearch = Boolean(patient.response && patient.response.toLowerCase().includes(searchLower));
+            break;
+          case 'mobile':
+            matchesSearch = Boolean(patient.mobileNumber && patient.mobileNumber.toLowerCase().includes(searchLower));
+            break;
+          case 'hospitalFile':
+            matchesSearch = Boolean(patient.hospitalFileNumber.toLowerCase().includes(searchLower));
+            break;
+          case 'clinicId':
+            matchesSearch = Boolean(patient.clinicId && patient.clinicId.toLowerCase().includes(searchLower));
+            break;
+          default:
+            matchesSearch = true;
+        }
+      }
+    }
     
     // Age filter
     let matchesAge = true;
@@ -358,7 +521,27 @@ export default function PatientsPage() {
             <div className="relative flex-grow">
               <input
                 type="text"
-                placeholder="Search patients..."
+                placeholder={
+                  activeFilter === 'all' 
+                    ? "Search all patient fields..." 
+                    : activeFilter === 'name' 
+                      ? "Search by patient name..." 
+                    : activeFilter === 'age' 
+                      ? "Search by age..." 
+                    : activeFilter === 'diagnosis' 
+                      ? "Search by diagnosis..." 
+                    : activeFilter === 'treatment' 
+                      ? "Search by treatment..." 
+                    : activeFilter === 'gender' 
+                      ? "Search by gender..." 
+                    : activeFilter === 'response' 
+                      ? "Search by response..." 
+                    : activeFilter === 'mobile' 
+                      ? "Search by mobile number..." 
+                    : activeFilter === 'hospitalFile' 
+                      ? "Search by hospital file number..." 
+                    : "Search by clinic ID..."
+                }
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -387,7 +570,34 @@ export default function PatientsPage() {
               </button>
               
               {isFilterOpen && (
-                <div className="absolute z-50 mt-2 w-72 right-0 md:right-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-4">
+                <div className="absolute z-50 mt-2 w-80 right-0 md:right-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-4">
+                  {/* Search Field Selector */}
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Search Field
+                    </label>
+                    <select
+                      value={activeFilter}
+                      onChange={(e) => setActiveFilter(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                    >
+                      <option value="all">All Fields</option>
+                      <option value="name">Name</option>
+                      <option value="age">Age</option>
+                      <option value="diagnosis">Diagnosis</option>
+                      <option value="treatment">Treatment</option>
+                      <option value="gender">Gender</option>
+                      <option value="response">Response</option>
+                      <option value="mobile">Mobile Number</option>
+                      <option value="hospitalFile">Hospital File Number</option>
+                      <option value="clinicId">Clinic ID</option>
+                    </select>
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      Select "All Fields" to search across all patient data
+                    </p>
+                  </div>
+
+                  {/* Age Filter Section */}
                   <div className="mb-4">
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Age Range
@@ -436,11 +646,13 @@ export default function PatientsPage() {
                         setAgeFilter('all');
                         setCustomMinAge('');
                         setCustomMaxAge('');
+                        setActiveFilter('all');
+                        setSearchTerm('');
                         setIsFilterOpen(false);
                       }}
                       className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
                     >
-                      Clear Filters
+                      Clear All Filters
                     </button>
                     <button
                       onClick={() => setIsFilterOpen(false)}
@@ -658,6 +870,48 @@ export default function PatientsPage() {
                       {selectedPatient.note || 'No notes available.'}
                     </p>
                   </div>
+
+                  {/* Table Data Section */}
+                  {selectedPatient.tableData && (
+                    <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg mt-6">
+                      <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Additional Data</h3>
+                      <div className="overflow-x-auto">
+                        <table className="w-full border-collapse rounded-lg overflow-hidden">
+                          <tbody>
+                            {(() => {
+                              try {
+                                const tableData = JSON.parse(selectedPatient.tableData);
+                                if (Array.isArray(tableData) && tableData.length > 0) {
+                                  return tableData.map((row, rowIndex) => (
+                                    <tr key={rowIndex}>
+                                      {Array.isArray(row) && row.map((cell, colIndex) => (
+                                        <td 
+                                          key={`${rowIndex}-${colIndex}`}
+                                          className={`border border-gray-300 dark:border-gray-600 px-2 py-1 text-xs ${
+                                            cell ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100' : 
+                                                   'bg-gray-100 dark:bg-gray-800/50'
+                                          }`}
+                                        >
+                                          {cell || ''}
+                                        </td>
+                                      ))}
+                                    </tr>
+                                  ));
+                                }
+                              } catch (e) {
+                                return (
+                                  <tr>
+                                    <td className="text-sm text-red-500 p-2">Error parsing table data</td>
+                                  </tr>
+                                );
+                              }
+                              return null;
+                            })()}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
                 </>
               ) : (
                 <div>

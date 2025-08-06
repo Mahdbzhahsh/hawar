@@ -19,6 +19,7 @@ export interface Patient {
   clinicId: string;
   response: string;
   note: string;
+  tableData?: string;
   createdAt: string;
   userId?: string;
 }
@@ -38,6 +39,7 @@ interface PatientRecord {
   clinic_id: string;
   response: string;
   note: string;
+  table_data?: string;
   created_at: string;
   user_id: string;
 }
@@ -127,6 +129,7 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
           clinicId: p.clinic_id || '',
           response: p.response,
           note: p.note,
+          tableData: p.table_data || '',
           createdAt: p.created_at,
           userId: p.user_id
         }));
@@ -207,6 +210,7 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
           clinic_id: clinicId,
           response: patientData.response || '',
           note: patientData.note || '',
+          table_data: patientData.tableData || '',
           user_id: userId
         })
         .select();
@@ -218,23 +222,24 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
       
       if (data && data[0]) {
         // Add the new patient to the state
-        const newPatient: Patient = {
-          id: data[0].id,
-          name: data[0].name,
-          age: data[0].age,
-          hospitalFileNumber: data[0].hospital_file_number,
-          mobileNumber: data[0].mobile_number,
-          sex: data[0].sex,
-          ageOfDiagnosis: data[0].age_of_diagnosis,
-          diagnosis: data[0].diagnosis,
-          treatment: data[0].treatment,
-          currentTreatment: data[0].current_treatment || '',
-          clinicId: data[0].clinic_id || '',
-          response: data[0].response,
-          note: data[0].note,
-          createdAt: data[0].created_at,
-          userId: data[0].user_id
-        };
+                  const newPatient: Patient = {
+            id: data[0].id,
+            name: data[0].name,
+            age: data[0].age,
+            hospitalFileNumber: data[0].hospital_file_number,
+            mobileNumber: data[0].mobile_number,
+            sex: data[0].sex,
+            ageOfDiagnosis: data[0].age_of_diagnosis,
+            diagnosis: data[0].diagnosis,
+            treatment: data[0].treatment,
+            currentTreatment: data[0].current_treatment || '',
+            clinicId: data[0].clinic_id || '',
+            response: data[0].response,
+            note: data[0].note,
+            tableData: data[0].table_data || '',
+            createdAt: data[0].created_at,
+            userId: data[0].user_id
+          };
         
         setPatients(prevPatients => [newPatient, ...prevPatients]);
       }
@@ -272,6 +277,7 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
       // Note: we don't allow editing clinicId as it's system-generated
       if (patientData.response !== undefined) dbData.response = patientData.response;
       if (patientData.note !== undefined) dbData.note = patientData.note;
+      if (patientData.tableData !== undefined) dbData.table_data = patientData.tableData;
 
       // Always use Supabase for data storage
       const { error } = await supabase
