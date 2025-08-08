@@ -159,12 +159,12 @@ export default function DashboardLayout({
       {/* Sidebar */}
       <div className={`${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-      } ${isMobile ? 'fixed' : 'relative'} z-50 w-72 bg-white dark:bg-gray-800 shadow-xl transition-transform duration-300 ease-in-out lg:translate-x-0 ${
-        !isMobile && !sidebarOpen ? 'w-20' : 'w-72'
-      } h-full overflow-y-auto`}>
+      } ${isMobile ? 'fixed' : 'relative'} z-50 bg-white dark:bg-gray-800 shadow-xl transition-all duration-300 ease-in-out lg:translate-x-0 ${
+        sidebarOpen ? 'w-72' : 'w-20'
+      } h-full overflow-y-auto scrollbar-hide`}>
         
         {/* Sidebar Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800 z-10">
           {(sidebarOpen || !isMobile) ? (
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
@@ -174,16 +174,22 @@ export default function DashboardLayout({
               </div>
               {(sidebarOpen || isMobile) && (
                 <div>
-                  <h1 className="font-bold text-xl text-gray-900 dark:text-white">HealthCare</h1>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Management System</p>
+                  <h1 className="font-bold text-xl text-gray-900 dark:text-white">Dr. Hawar</h1>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Patient Management</p>
                 </div>
               )}
             </div>
           ) : (
-            <div className="w-10 h-10 mx-auto bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-              </svg>
+            <div className="w-full flex justify-center">
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg hover:from-blue-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                title="Expand sidebar"
+              >
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                </svg>
+              </button>
             </div>
           )}
           
@@ -200,27 +206,22 @@ export default function DashboardLayout({
           )}
           
           {/* Toggle button for desktop */}
-          {!isMobile && (
+          {!isMobile && sidebarOpen && (
             <button 
               onClick={toggleSidebar}
-              className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 dark:hover:text-gray-200 transition-colors duration-200"
+              className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 dark:hover:text-gray-200 transition-colors duration-200 z-20"
+              title="Collapse sidebar"
             >
-              {sidebarOpen ? (
-                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
-                </svg>
-              ) : (
-                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
-                </svg>
-              )}
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+              </svg>
             </button>
           )}
         </div>
         
         {/* Navigation */}
         <div className="flex flex-col h-full">
-          <nav className="flex-1 px-4 py-6">
+          <nav className="flex-1 px-4 py-6 overflow-y-auto overflow-x-hidden scrollbar-hide">
             <ul className="space-y-2">
               {navigationItems.map((item) => (
                 <li key={item.name}>
@@ -256,11 +257,17 @@ export default function DashboardLayout({
           </nav>
           
           {/* Database Status */}
-          {(sidebarOpen || isMobile) && (
-            <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700">
+          <div className={`${sidebarOpen ? 'px-4' : 'px-1'} py-3 border-t border-gray-200 dark:border-gray-700 ${!sidebarOpen && !isMobile ? 'flex justify-center' : ''}`}>
+            {sidebarOpen || isMobile ? (
               <DatabaseStatus />
-            </div>
-          )}
+            ) : (
+              <div title="Database Status">
+                <svg className="h-4 w-4 text-green-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+            )}
+          </div>
           
           {/* User Section */}
           <div className="p-4 border-t border-gray-200 dark:border-gray-700">
