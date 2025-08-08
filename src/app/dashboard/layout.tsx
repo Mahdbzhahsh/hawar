@@ -346,11 +346,10 @@ export default function DashboardLayout({
         </main>
 
         {/* Footer */}
-        <footer className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 py-4 px-6">
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            <DatabaseStatus />
-            <div className="text-sm text-gray-500 dark:text-gray-400 mt-2 md:mt-0">
-              &copy; {new Date().getFullYear()} TRX
+                  <footer className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 py-4 px-6">
+           <div className="flex justify-center items-center">
+             <div className="text-sm text-gray-500 dark:text-gray-400">
+              &copy; 2025 TRX
             </div>
           </div>
         </footer>
