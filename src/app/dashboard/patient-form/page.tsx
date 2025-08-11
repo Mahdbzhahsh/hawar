@@ -23,6 +23,7 @@ export default function PatientForm() {
     response: '',
     note: '',
     tableData: '',
+    imageUrl: '',
     // clinicId is not included here as it's auto-generated
   });
   
@@ -134,6 +135,7 @@ export default function PatientForm() {
           response: '',
           note: '',
           tableData: '',
+          imageUrl: '',
         });
         // Reset table cells
         setTableCells(Array(8).fill(null).map(() => Array(8).fill('')));
@@ -396,6 +398,23 @@ export default function PatientForm() {
                           disabled={isLoading || formSubmitted}
                           className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed transition-all duration-200"
                           placeholder="Current treatment details..."
+                        />
+                      </div>
+                      
+                      {/* Patient Image URL (Optional) */}
+                      <div>
+                        <label htmlFor="imageUrl" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Patient Image URL <span className="text-xs text-gray-500">(Optional)</span>
+                        </label>
+                        <input
+                          type="text"
+                          id="imageUrl"
+                          name="imageUrl"
+                          value={formData.imageUrl}
+                          onChange={handleChange}
+                          disabled={isLoading || formSubmitted}
+                          className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed transition-all duration-200"
+                          placeholder="URL to patient image"
                         />
                       </div>
                     </div>

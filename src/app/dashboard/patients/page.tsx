@@ -859,6 +859,19 @@ export default function PatientsPage() {
                           <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Response</span>
                           <span className="text-sm text-gray-900 dark:text-gray-100">{selectedPatient.response}</span>
                         </div>
+                        {selectedPatient.imageUrl && (
+                          <div className="flex flex-col mt-2">
+                            <span className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Patient Image URL</span>
+                            <a 
+                              href={selectedPatient.imageUrl} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-sm text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 break-all"
+                            >
+                              {selectedPatient.imageUrl}
+                            </a>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

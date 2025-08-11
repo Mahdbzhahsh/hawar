@@ -20,6 +20,7 @@ export interface Patient {
   response: string;
   note: string;
   tableData?: string;
+  imageUrl?: string;
   createdAt: string;
   userId?: string;
 }
@@ -40,6 +41,7 @@ interface PatientRecord {
   response: string;
   note: string;
   table_data?: string;
+  image_url?: string;
   created_at: string;
   user_id: string;
 }
@@ -130,6 +132,7 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
           response: p.response,
           note: p.note,
           tableData: p.table_data || '',
+          imageUrl: p.image_url || '',
           createdAt: p.created_at,
           userId: p.user_id
         }));
@@ -211,6 +214,7 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
           response: patientData.response || '',
           note: patientData.note || '',
           table_data: patientData.tableData || '',
+          image_url: patientData.imageUrl || '',
           user_id: userId
         })
         .select();
@@ -237,6 +241,7 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
             response: data[0].response,
             note: data[0].note,
             tableData: data[0].table_data || '',
+            imageUrl: data[0].image_url || '',
             createdAt: data[0].created_at,
             userId: data[0].user_id
           };
@@ -278,6 +283,7 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
       if (patientData.response !== undefined) dbData.response = patientData.response;
       if (patientData.note !== undefined) dbData.note = patientData.note;
       if (patientData.tableData !== undefined) dbData.table_data = patientData.tableData;
+      if (patientData.imageUrl !== undefined) dbData.image_url = patientData.imageUrl;
 
       // Always use Supabase for data storage
       const { error } = await supabase
