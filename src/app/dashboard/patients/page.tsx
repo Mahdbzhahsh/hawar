@@ -282,9 +282,9 @@ export default function PatientsPage() {
   };
 
   // Handle report generation
-  const handleGenerateReport = (patient: Patient) => {
+  const handleGenerateReport = async (patient: Patient) => {
     try {
-      generatePatientPDF(patient);
+      await generatePatientPDF(patient);
     } catch (error) {
       console.error('Error generating PDF:', error);
       alert('Failed to generate PDF report. Please try again.');

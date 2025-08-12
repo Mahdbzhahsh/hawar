@@ -2,8 +2,37 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import type { Patient } from '@/app/context/PatientContext';
 
+// Function to shorten URL using is.gd API
+const shortenUrl = async (url: string): Promise<string> => {
+  if (!url) return 'N/A';
+  
+  try {
+    // Check if URL is valid
+    new URL(url);
+    
+    // Call is.gd API to shorten the URL
+    const response = await fetch(`https://is.gd/create.php?format=json&url=${encodeURIComponent(url)}`);
+    
+    if (!response.ok) {
+      console.error('URL shortening failed:', response.statusText);
+      return url; // Return original URL if shortening fails
+    }
+    
+    const data = await response.json();
+    return data.shorturl || url;
+  } catch (error) {
+    console.error('Error shortening URL:', error);
+    return url; // Return original URL if there's an error
+  }
+};
+
 // Function to generate a PDF report for a patient
-export const generatePatientPDF = (patient: Patient) => {
+export const generatePatientPDF = async (patient: Patient) => {
+  // Shorten the image URL if it exists
+  let shortenedImageUrl = 'N/A';
+  if (patient.imageUrl) {
+    shortenedImageUrl = await shortenUrl(patient.imageUrl);
+  }
   // Create new PDF document
   const doc = new jsPDF();
   
@@ -104,7 +133,7 @@ export const generatePatientPDF = (patient: Patient) => {
       ['Sex', patient.sex || 'N/A'],
       ['Mobile Number', patient.mobileNumber || 'N/A'],
       ['Hospital File Number', patient.hospitalFileNumber || 'N/A'],
-      ['Image URL', patient.imageUrl || 'N/A']
+      ['Image URL', shortenedImageUrl]
     ],
     theme: 'striped',
     headStyles: {
