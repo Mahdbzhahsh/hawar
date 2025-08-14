@@ -51,3 +51,57 @@ export async function ensurePatientsTableExists() {
     return false;
   }
 } 
+
+// Function to ensure the visits table exists
+export async function ensureVisitsTableExists() {
+  try {
+    const { error: checkError } = await supabase
+      .from('visits')
+      .select('id')
+      .limit(1);
+
+    if (checkError) {
+      console.log('Visits table may not exist, attempting to create it...');
+      
+      // Try creating the table if it doesn't exist
+      const { error: createError } = await supabase.rpc('exec_sql', { 
+        sql: `
+          CREATE TABLE IF NOT EXISTS visits (
+            id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+            patient_id uuid REFERENCES patients(id) ON DELETE CASCADE,
+            created_at timestamp with time zone DEFAULT now()
+          );
+          CREATE INDEX IF NOT EXISTS visits_patient_id_idx ON visits (patient_id);
+          CREATE INDEX IF NOT EXISTS visits_created_at_idx ON visits (created_at);
+        `
+      });
+      
+      if (createError) {
+        console.error('Failed to create visits table automatically:', createError);
+        console.error('Create the visits table in Supabase with:');
+        console.error('- id: uuid (primary key, default: uuid_generate_v4())');
+        console.error('- patient_id: uuid (foreign key to patients.id)');
+        console.error('- created_at: timestamp with time zone (default: now())');
+        return false;
+      }
+      
+      // Verify creation was successful
+      const { error: verifyError } = await supabase
+        .from('visits')
+        .select('id')
+        .limit(1);
+        
+      if (verifyError) {
+        console.error('Visits table creation verification failed:', verifyError);
+        return false;
+      }
+      
+      console.log('Visits table created successfully');
+      return true;
+    }
+    return true;
+  } catch (error) {
+    console.error('Error checking/creating visits table:', error);
+    return false;
+  }
+}

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { supabase, ensurePatientsTableExists } from '@/lib/supabase';
+import { supabase, ensurePatientsTableExists, ensureVisitsTableExists } from '@/lib/supabase';
 import { useAuth } from './AuthContext';
 
 // Define the Patient interface
@@ -74,6 +74,7 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
         if (!exists) {
           setError('Database table not found. Please contact the administrator.');
         }
+        await ensureVisitsTableExists();
         setTableChecked(true);
       } else {
         setTableChecked(true);
@@ -166,12 +167,17 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
         throw new Error('Not authenticated');
       }
 
-      // Disallow creation for staff role
-      if (isStaffAuth) {
-        const msg = "You don’t have permission to do that.";
-        setError(msg);
-        throw new Error(msg);
-      }
+      // For staff: ignore restricted fields on create (server-side guard)
+      const sanitizedData = isStaffAuth ? {
+        ...patientData,
+        diagnosis: '',
+        treatment: '',
+        currentTreatment: '',
+        response: '',
+        imageUrl: '',
+        note: '',
+        tableData: '',
+      } : patientData;
 
       // Generate Clinic ID: [PatientCount][DDMMYY]
       // 1. Get today's date in DDMMYY format
@@ -208,20 +214,20 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
       const { data, error } = await supabase
         .from('patients')
         .insert({
-          name: patientData.name, // Only name is required
-          age: patientData.age || '',
-          hospital_file_number: patientData.hospitalFileNumber || '',
-          mobile_number: patientData.mobileNumber || '',
-          sex: patientData.sex || '',
-          age_of_diagnosis: patientData.ageOfDiagnosis || '',
-          diagnosis: patientData.diagnosis || '',
-          treatment: patientData.treatment || '',
-          current_treatment: patientData.currentTreatment || '',
+          name: sanitizedData.name, // Only name is required
+          age: sanitizedData.age || '',
+          hospital_file_number: sanitizedData.hospitalFileNumber || '',
+          mobile_number: sanitizedData.mobileNumber || '',
+          sex: sanitizedData.sex || '',
+          age_of_diagnosis: sanitizedData.ageOfDiagnosis || '',
+          diagnosis: sanitizedData.diagnosis || '',
+          treatment: sanitizedData.treatment || '',
+          current_treatment: sanitizedData.currentTreatment || '',
           clinic_id: clinicId,
-          response: patientData.response || '',
-          note: patientData.note || '',
-          table_data: patientData.tableData || '',
-          image_url: patientData.imageUrl || '',
+          response: sanitizedData.response || '',
+          note: sanitizedData.note || '',
+          table_data: sanitizedData.tableData || '',
+          image_url: sanitizedData.imageUrl || '',
           user_id: userId
         })
         .select();
@@ -254,6 +260,26 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
           };
         
         setPatients(prevPatients => [newPatient, ...prevPatients]);
+        
+        // Automatically log a visit for new patients
+        try {
+          // Check if visits table exists first
+          const visitsTableExists = await ensureVisitsTableExists();
+          
+          if (visitsTableExists) {
+            const { error: visitError } = await supabase.from('visits').insert({ patient_id: data[0].id });
+            if (visitError) {
+              console.error('Error logging initial visit for new patient:', visitError);
+            } else {
+              console.log('Successfully logged initial visit for new patient');
+            }
+          } else {
+            console.error('Skipping visit logging - visits table does not exist');
+          }
+        } catch (visitErr) {
+          console.error('Error logging initial visit for new patient:', visitErr);
+          // Don't throw - we still created the patient successfully
+        }
       }
     } catch (err) {
       console.error('Error adding patient:', err);
@@ -272,6 +298,13 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
       
       if (!isAuthenticated || !userId) {
         throw new Error('Not authenticated');
+      }
+
+      // Disallow editing for staff role
+      if (isStaffAuth) {
+        const msg = "You don’t have permission to edit patient data.";
+        setError(msg);
+        throw new Error(msg);
       }
 
       // Convert camelCase to snake_case for database
