@@ -333,7 +333,9 @@ export default function PatientsPage() {
             matchesSearch = Boolean(patient.treatment && patient.treatment.toLowerCase().includes(searchLower));
             break;
           case 'gender':
-            matchesSearch = Boolean(patient.sex && patient.sex.toLowerCase().includes(searchLower));
+            matchesSearch = Boolean(
+              patient.sex && patient.sex.trim().toLowerCase() === searchLower.trim().toLowerCase()
+            );
             break;
           case 'response':
             matchesSearch = Boolean(patient.response && patient.response.toLowerCase().includes(searchLower));

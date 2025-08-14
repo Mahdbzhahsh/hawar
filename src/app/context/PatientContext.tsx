@@ -64,7 +64,7 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tableChecked, setTableChecked] = useState(false);
-  const { session, isAuthenticated, userId } = useAuth();
+  const { session, isAuthenticated, userId, isStaffAuth } = useAuth();
 
   // Check if the patients table exists
   useEffect(() => {
@@ -164,6 +164,13 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
       
       if (!isAuthenticated || !userId) {
         throw new Error('Not authenticated');
+      }
+
+      // Disallow creation for staff role
+      if (isStaffAuth) {
+        const msg = "You don’t have permission to do that.";
+        setError(msg);
+        throw new Error(msg);
       }
 
       // Generate Clinic ID: [PatientCount][DDMMYY]

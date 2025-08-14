@@ -1,14 +1,25 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { usePatients } from '../../context/PatientContext';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '../../context/AuthContext';
 
 export default function PatientForm() {
   const { addPatient, isLoading, error } = usePatients();
   const router = useRouter();
+  const { isStaffAuth } = useAuth();
   const [formSubmitted, setFormSubmitted] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
+
+  // If staff, show blocked UI and message
+  const isBlocked = Boolean(isStaffAuth);
+
+  useEffect(() => {
+    if (isBlocked) {
+      setLocalError("You don’t have permission to do that.");
+    }
+  }, [isBlocked]);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -116,6 +127,10 @@ export default function PatientForm() {
     setLocalError(null);
     
     try {
+      if (isBlocked) {
+        setLocalError("You don’t have permission to do that.");
+        return;
+      }
       setFormSubmitted(true);
       // Since clinicId is auto-generated on the server, we don't include it in the form data
       await addPatient({...formData, clinicId: ''});
@@ -550,16 +565,23 @@ export default function PatientForm() {
               </div>
 
               {/* Submit Button */}
-              <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+                 <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
                 <div className="flex justify-center sm:justify-end">
                   <button
                     type="submit"
-                    disabled={isLoading || formSubmitted}
-                    className={`w-full sm:w-auto px-8 py-3 bg-indigo-600 hover:bg-indigo-700 focus:ring-4 focus:ring-indigo-200 dark:focus:ring-indigo-800 text-white font-medium rounded-lg shadow-lg transition-all duration-200 flex items-center justify-center ${
-                      isLoading || formSubmitted ? 'opacity-70 cursor-not-allowed' : 'hover:shadow-xl transform hover:-translate-y-0.5'
+                       disabled={isLoading || formSubmitted || isBlocked}
+                       className={`w-full sm:w-auto px-8 py-3 ${isBlocked ? 'bg-gray-300 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'} focus:ring-4 focus:ring-indigo-200 dark:focus:ring-indigo-800 text-white font-medium rounded-lg shadow-lg transition-all duration-200 flex items-center justify-center ${
+                      isLoading || formSubmitted || isBlocked ? 'opacity-70 cursor-not-allowed' : 'hover:shadow-xl transform hover:-translate-y-0.5'
                     }`}
                   >
-                    {isLoading ? (
+                    {isBlocked ? (
+                      <>
+                        <svg className="mr-2 h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 2a6 6 0 00-6 6v2H3a1 1 0 000 2h14a1 1 0 000-2h-1V8a6 6 0 00-6-6zm-2 8V8a2 2 0 114 0v2H8z" clipRule="evenodd" />
+                        </svg>
+                        You don’t have permission
+                      </>
+                    ) : isLoading ? (
                       <>
                         <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>

@@ -55,7 +55,7 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { logout, isAuthenticated } = useAuth();
+  const { logout, isAuthenticated, isStaffAuth, isAdminAuth } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const [greeting, setGreeting] = useState('');
@@ -225,32 +225,60 @@ export default function DashboardLayout({
             <ul className="space-y-2">
               {navigationItems.map((item) => (
                 <li key={item.name}>
-                  <Link
-                    href={item.href}
-                    onClick={closeSidebar}
-                    className={`flex items-center p-3 rounded-xl transition-all duration-200 group ${
-                      isActivePath(item.href)
-                        ? 'bg-blue-50 text-blue-700 shadow-sm dark:bg-blue-900/30 dark:text-blue-300'
-                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white'
-                    }`}
-                  >
-                    <div className={`flex-shrink-0 p-1 rounded-lg ${
-                      isActivePath(item.href)
-                        ? 'bg-blue-100 text-blue-600 dark:bg-blue-800 dark:text-blue-300'
-                        : 'bg-gray-100 text-gray-500 group-hover:bg-gray-200 dark:bg-gray-600 dark:text-gray-400'
-                    }`}>
-                      {item.icon}
-                    </div>
-                    {(sidebarOpen || isMobile) && (
-                      <div className="ml-3 flex-1 min-w-0">
-                        <p className="text-sm font-semibold truncate">{item.name}</p>
-                        <p className="text-xs opacity-70 truncate">{item.description}</p>
-                      </div>
-                    )}
-                    {(sidebarOpen || isMobile) && isActivePath(item.href) && (
-                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                    )}
-                  </Link>
+                  {(() => {
+                    const isRegister = item.href === '/dashboard/patient-form';
+                    const isBlocked = Boolean(isStaffAuth && isRegister);
+                    const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+                      if (isBlocked) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        // Keep sidebar open on desktop and show title tooltip as feedback
+                        return false;
+                      }
+                      closeSidebar();
+                    };
+                    return (
+                      <Link
+                        href={isBlocked ? '#' : item.href}
+                        onClick={handleNavClick}
+                        aria-disabled={isBlocked}
+                        title={isBlocked ? "You don’t have permission to do that." : undefined}
+                        className={`flex items-center p-3 rounded-xl transition-all duration-200 group ${
+                          isBlocked
+                            ? 'cursor-not-allowed opacity-70 text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/30'
+                            : isActivePath(item.href)
+                              ? 'bg-blue-50 text-blue-700 shadow-sm dark:bg-blue-900/30 dark:text-blue-300'
+                              : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white'
+                        }`}
+                      >
+                        <div className={`relative flex-shrink-0 p-1 rounded-lg ${
+                          isBlocked
+                            ? 'bg-gray-100 text-gray-400 dark:bg-gray-600 dark:text-gray-500'
+                            : isActivePath(item.href)
+                              ? 'bg-blue-100 text-blue-600 dark:bg-blue-800 dark:text-blue-300'
+                              : 'bg-gray-100 text-gray-500 group-hover:bg-gray-200 dark:bg-gray-600 dark:text-gray-400'
+                        }`}>
+                          {item.icon}
+                          {isBlocked && (
+                            <span className="absolute -top-1 -right-1 inline-flex items-center justify-center w-4 h-4 rounded-full bg-red-500 text-white">
+                              <svg className="w-3 h-3" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M10 2a6 6 0 00-6 6v2H3a1 1 0 000 2h14a1 1 0 000-2h-1V8a6 6 0 00-6-6zm-2 8V8a2 2 0 114 0v2H8z" clipRule="evenodd" />
+                              </svg>
+                            </span>
+                          )}
+                        </div>
+                        {(sidebarOpen || isMobile) && (
+                          <div className="ml-3 flex-1 min-w-0">
+                            <p className="text-sm font-semibold truncate">{item.name}</p>
+                            <p className="text-xs opacity-70 truncate">{isBlocked ? 'Access restricted' : item.description}</p>
+                          </div>
+                        )}
+                        {(sidebarOpen || isMobile) && !isBlocked && isActivePath(item.href) && (
+                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                        )}
+                      </Link>
+                    );
+                  })()}
                 </li>
               ))}
             </ul>
@@ -275,11 +303,11 @@ export default function DashboardLayout({
               <div className="space-y-3">
                 <div className="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
                   <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-sm">
-                    <span className="text-white font-semibold text-sm">AD</span>
+                    <span className="text-white font-semibold text-sm">{isStaffAuth ? 'ST' : 'AD'}</span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">Administrator</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">System Admin</p>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{isStaffAuth ? 'Staff' : 'Administrator'}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{isStaffAuth ? 'Clinic Staff' : 'System Admin'}</p>
                   </div>
                 </div>
                 <button 
@@ -295,7 +323,7 @@ export default function DashboardLayout({
             ) : (
               <div className="space-y-2">
                 <div className="w-10 h-10 mx-auto bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-sm">
-                  <span className="text-white font-semibold text-sm">AD</span>
+                  <span className="text-white font-semibold text-sm">{isStaffAuth ? 'ST' : 'AD'}</span>
                 </div>
                 <button 
                   onClick={logout}

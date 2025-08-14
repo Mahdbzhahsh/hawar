@@ -12,6 +12,9 @@ type AuthContextType = {
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   userId: string | null;
+  // New: local role flags
+  isStaffAuth?: boolean;
+  isAdminAuth?: boolean;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -23,6 +26,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAdminAuth, setIsAdminAuth] = useState(false); // Track if user is authenticated as admin
+  const [isStaffAuth, setIsStaffAuth] = useState(false); // Track if user is authenticated as staff
   const [userId, setUserId] = useState<string | null>(null);
   const router = useRouter();
 
@@ -34,6 +38,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const adminAuth = localStorage.getItem('adminAuth');
         if (adminAuth === 'true') {
           setIsAdminAuth(true);
+          setUserId(ADMIN_USER_ID);
+          setIsLoading(false);
+          return;
+        }
+
+        // Check if staff is authenticated via localStorage
+        const staffAuth = localStorage.getItem('staffAuth');
+        if (staffAuth === 'true') {
+          setIsStaffAuth(true);
+          // Use the same sentinel ID to ensure data visibility and operations
           setUserId(ADMIN_USER_ID);
           setIsLoading(false);
           return;
@@ -70,6 +84,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setIsAdminAuth(true);
             setUserId(ADMIN_USER_ID);
           }
+          // If session is null and staff auth was set, maintain staff auth
+          const staffAuth = localStorage.getItem('staffAuth');
+          if (staffAuth === 'true') {
+            setIsStaffAuth(true);
+            setUserId(ADMIN_USER_ID);
+          }
         }
       }
     );
@@ -86,6 +106,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsAdminAuth(true);
       setUserId(ADMIN_USER_ID);
       localStorage.setItem('adminAuth', 'true');
+      return { success: true };
+    }
+
+    // For staff credentials, use simple local authentication with restrictions
+    if (email === 'staff' && password === 'staff365') {
+      setIsStaffAuth(true);
+      // Use sentinel so queries work consistently (view/edit allowed for now)
+      setUserId(ADMIN_USER_ID);
+      localStorage.setItem('staffAuth', 'true');
       return { success: true };
     }
     
@@ -118,6 +147,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setIsAdminAuth(false);
         setUserId(null);
       }
+
+      // If staff auth, clear localStorage
+      if (isStaffAuth) {
+        localStorage.removeItem('staffAuth');
+        setIsStaffAuth(false);
+        setUserId(null);
+      }
       
       // Also sign out from Supabase (won't hurt even if not signed in)
       await supabase.auth.signOut();
@@ -131,11 +167,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   return (
     <AuthContext.Provider value={{ 
       session, 
-      isAuthenticated: !!session || isAdminAuth, 
+      isAuthenticated: !!session || isAdminAuth || isStaffAuth, 
       isLoading,
       login, 
       logout,
-      userId: userId
+      userId: userId,
+      isStaffAuth,
+      isAdminAuth
     }}>
       {children}
     </AuthContext.Provider>
