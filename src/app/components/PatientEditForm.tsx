@@ -27,6 +27,7 @@ export default function PatientEditForm({ patient, onSubmit, onCancel, isLoading
     imageUrl: patient.imageUrl || '',
     imaging: patient.imaging || '',
     ultrasound: patient.ultrasound || '',
+    labText: patient.labText || '',
     // clinicId is read-only, not included in editable form
   });
   
@@ -110,6 +111,7 @@ export default function PatientEditForm({ patient, onSubmit, onCancel, isLoading
       imageUrl: patient.imageUrl || '',
       imaging: patient.imaging || '',
       ultrasound: patient.ultrasound || '',
+      labText: patient.labText || '',
       // clinicId is read-only, not included in editable form
     });
     
@@ -398,6 +400,23 @@ export default function PatientEditForm({ patient, onSubmit, onCancel, isLoading
             disabled={isLoading}
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed"
             placeholder="Ultrasound information"
+          />
+        </div>
+        
+        {/* Lab Text */}
+        <div>
+          <label htmlFor="labText" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Lab Text <span className="text-xs text-gray-500">(Optional)</span>
+          </label>
+          <input
+            type="text"
+            id="labText"
+            name="labText"
+            value={formData.labText}
+            onChange={handleChange}
+            disabled={isLoading}
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed"
+            placeholder="Lab text information"
           />
         </div>
       </div>

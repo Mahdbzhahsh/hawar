@@ -31,6 +31,7 @@ export default function PatientForm() {
     imageUrl: '',
     imaging: '',
     ultrasound: '',
+    labText: '',
     // clinicId is not included here as it's auto-generated
   });
   
@@ -145,6 +146,7 @@ export default function PatientForm() {
           imageUrl: '',
           imaging: '',
           ultrasound: '',
+          labText: '',
         });
         // Reset table cells
         setTableCells(Array(8).fill(null).map(() => Array(8).fill('')));
@@ -471,6 +473,25 @@ export default function PatientForm() {
                           disabled={isLoading || formSubmitted || isStaff}
                           className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed transition-all duration-200"
                           placeholder="Ultrasound information"
+                        />
+                      </div>
+                      )}
+                      
+                      {/* Lab Text (Optional) */}
+                      {!isStaff && (
+                      <div>
+                        <label htmlFor="labText" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Lab Text <span className="text-xs text-gray-500">(Optional)</span>
+                        </label>
+                        <input
+                          type="text"
+                          id="labText"
+                          name="labText"
+                          value={formData.labText}
+                          onChange={handleChange}
+                          disabled={isLoading || formSubmitted || isStaff}
+                          className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed transition-all duration-200"
+                          placeholder="Lab text information"
                         />
                       </div>
                       )}

@@ -23,6 +23,7 @@ export interface Patient {
   imageUrl?: string;
   imaging?: string;
   ultrasound?: string;
+  labText?: string;
   createdAt: string;
   userId?: string;
 }
@@ -46,6 +47,7 @@ interface PatientRecord {
   image_url?: string;
   imaging?: string;
   ultrasound?: string;
+  lab_text?: string;
   created_at: string;
   user_id: string;
 }
@@ -140,6 +142,7 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
           imageUrl: p.image_url || '',
           imaging: p.imaging || '',
           ultrasound: p.ultrasound || '',
+          labText: p.lab_text || '',
           createdAt: p.created_at,
           userId: p.user_id
         }));
@@ -185,6 +188,7 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
         tableData: '',
         imaging: '',
         ultrasound: '',
+        labText: '',
       } : patientData;
 
       // Generate Clinic ID: [PatientCount][DDMMYY]
@@ -238,6 +242,7 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
           image_url: sanitizedData.imageUrl || '',
           imaging: sanitizedData.imaging || '',
           ultrasound: sanitizedData.ultrasound || '',
+          lab_text: sanitizedData.labText || '',
           user_id: userId
         })
         .select();
@@ -267,6 +272,7 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
             imageUrl: data[0].image_url || '',
             imaging: data[0].imaging || '',
             ultrasound: data[0].ultrasound || '',
+            labText: data[0].lab_text || '',
             createdAt: data[0].created_at,
             userId: data[0].user_id
           };
@@ -338,6 +344,7 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
       if (patientData.imageUrl !== undefined) dbData.image_url = patientData.imageUrl;
       if (patientData.imaging !== undefined) dbData.imaging = patientData.imaging;
       if (patientData.ultrasound !== undefined) dbData.ultrasound = patientData.ultrasound;
+      if (patientData.labText !== undefined) dbData.lab_text = patientData.labText;
 
       // Always use Supabase for data storage
       const { error } = await supabase
