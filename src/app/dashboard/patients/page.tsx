@@ -879,68 +879,96 @@ export default function PatientsPage() {
                     <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
                       <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Personal Information</h3>
                       <div className="space-y-3">
-                        <div className="flex justify-between">
-                          <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Age</span>
-                          <span className="text-sm text-gray-900 dark:text-gray-100">{selectedPatient.age}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Sex</span>
-                          <span className="text-sm text-gray-900 dark:text-gray-100">{selectedPatient.sex}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Mobile</span>
-                          <span className="text-sm text-gray-900 dark:text-gray-100">{selectedPatient.mobileNumber}</span>
-                        </div>
+                        {selectedPatient.age && (
+                          <div className="flex justify-between">
+                            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Age</span>
+                            <span className="text-sm text-gray-900 dark:text-gray-100">{selectedPatient.age}</span>
+                          </div>
+                        )}
+                        {selectedPatient.sex && (
+                          <div className="flex justify-between">
+                            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Sex</span>
+                            <span className="text-sm text-gray-900 dark:text-gray-100">{selectedPatient.sex}</span>
+                          </div>
+                        )}
+                        {selectedPatient.mobileNumber && (
+                          <div className="flex justify-between">
+                            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Mobile</span>
+                            <span className="text-sm text-gray-900 dark:text-gray-100">{selectedPatient.mobileNumber}</span>
+                          </div>
+                        )}
                       </div>
                     </div>
 
                     <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
                       <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Medical Information</h3>
                       <div className="space-y-3">
-                        <div className="flex justify-between">
-                          <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Diagnosis Age</span>
-                          <span className="text-sm text-gray-900 dark:text-gray-100">{selectedPatient.ageOfDiagnosis}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Diagnosis</span>
-                          <span className="text-sm text-gray-900 dark:text-gray-100">{selectedPatient.diagnosis}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Treatment</span>
-                          <span className="text-sm text-gray-900 dark:text-gray-100">{selectedPatient.treatment}</span>
-                        </div>
-                        <div className="flex flex-col">
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Current Treatment</span>
-                            <button
-                              onClick={() => {
-                                if (selectedPatient.currentTreatment) {
-                                  handlePrintTreatment(selectedPatient);
-                                } else {
-                                  alert('Please add current treatment information before printing.');
-                                }
-                              }}
-                              title="Print treatment card for this patient"
-                              className="flex items-center px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs"
-                            >
-                              <svg className="h-3 w-3 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                              </svg>
-                              Print
-                            </button>
+                        {selectedPatient.ageOfDiagnosis && (
+                          <div className="flex justify-between">
+                            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Diagnosis Age</span>
+                            <span className="text-sm text-gray-900 dark:text-gray-100">{selectedPatient.ageOfDiagnosis}</span>
                           </div>
-                          <div className="mt-1 bg-white dark:bg-gray-800 p-2 rounded border border-gray-200 dark:border-gray-600">
-                            <p className="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap">{selectedPatient.currentTreatment || 'No current treatment specified.'}</p>
+                        )}
+                        {selectedPatient.diagnosis && (
+                          <div className="flex justify-between">
+                            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Diagnosis</span>
+                            <span className="text-sm text-gray-900 dark:text-gray-100">{selectedPatient.diagnosis}</span>
                           </div>
-                        </div>
+                        )}
+                        {selectedPatient.treatment && (
+                          <div className="flex justify-between">
+                            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Treatment</span>
+                            <span className="text-sm text-gray-900 dark:text-gray-100">{selectedPatient.treatment}</span>
+                          </div>
+                        )}
+                        {selectedPatient.currentTreatment ? (
+                          <div className="flex flex-col">
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Current Treatment</span>
+                              <button
+                                onClick={() => handlePrintTreatment(selectedPatient)}
+                                title="Print treatment card for this patient"
+                                className="flex items-center px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs"
+                              >
+                                <svg className="h-3 w-3 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                                </svg>
+                                Print
+                              </button>
+                            </div>
+                            <div className="mt-1 bg-white dark:bg-gray-800 p-2 rounded border border-gray-200 dark:border-gray-600">
+                              <p className="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap">{selectedPatient.currentTreatment}</p>
+                            </div>
+                          </div>
+                        ) : null}
                         <div className="flex justify-between">
                           <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Clinic ID</span>
                           <span className="text-sm text-gray-900 dark:text-gray-100">{selectedPatient.clinicId}</span>
                         </div>
-                        <div className="flex justify-between">
-                          <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Response</span>
-                          <span className="text-sm text-gray-900 dark:text-gray-100">{selectedPatient.response}</span>
-                        </div>
+                        {selectedPatient.response && (
+                          <div className="flex justify-between">
+                            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Response</span>
+                            <span className="text-sm text-gray-900 dark:text-gray-100">{selectedPatient.response}</span>
+                          </div>
+                        )}
+                        {selectedPatient.imaging && (
+                          <div className="flex justify-between">
+                            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Imaging</span>
+                            <span className="text-sm text-gray-900 dark:text-gray-100">{selectedPatient.imaging}</span>
+                          </div>
+                        )}
+                        {selectedPatient.ultrasound && (
+                          <div className="flex justify-between">
+                            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Ultrasound</span>
+                            <span className="text-sm text-gray-900 dark:text-gray-100">{selectedPatient.ultrasound}</span>
+                          </div>
+                        )}
+                        {selectedPatient.labText && (
+                          <div className="flex justify-between">
+                            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Lab Text</span>
+                            <span className="text-sm text-gray-900 dark:text-gray-100">{selectedPatient.labText}</span>
+                          </div>
+                        )}
                         {selectedPatient.imageUrl && (
                           <div className="flex flex-col mt-2">
                             <span className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Patient Image URL</span>
@@ -959,12 +987,14 @@ export default function PatientsPage() {
                   </div>
 
                   {/* Notes Section */}
-                  <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
-                    <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Notes</h3>
-                    <p className="text-sm text-gray-800 dark:text-gray-200">
-                      {selectedPatient.note || 'No notes available.'}
-                    </p>
-                  </div>
+                  {selectedPatient.note && (
+                    <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                      <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Notes</h3>
+                      <p className="text-sm text-gray-800 dark:text-gray-200">
+                        {selectedPatient.note}
+                      </p>
+                    </div>
+                  )}
 
                   {/* Table Data Section */}
                   {selectedPatient.tableData && (
