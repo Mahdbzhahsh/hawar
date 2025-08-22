@@ -29,6 +29,8 @@ export default function PatientForm() {
     note: '',
     tableData: '',
     imageUrl: '',
+    imaging: '',
+    ultrasound: '',
     // clinicId is not included here as it's auto-generated
   });
   
@@ -141,6 +143,8 @@ export default function PatientForm() {
           note: '',
           tableData: '',
           imageUrl: '',
+          imaging: '',
+          ultrasound: '',
         });
         // Reset table cells
         setTableCells(Array(8).fill(null).map(() => Array(8).fill('')));
@@ -429,6 +433,44 @@ export default function PatientForm() {
                            disabled={isLoading || formSubmitted || isStaff}
                           className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed transition-all duration-200"
                           placeholder="URL to patient image"
+                        />
+                      </div>
+                      )}
+                      
+                      {/* Imaging (Optional) */}
+                      {!isStaff && (
+                      <div>
+                        <label htmlFor="imaging" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Imaging <span className="text-xs text-gray-500">(Optional)</span>
+                        </label>
+                        <input
+                          type="text"
+                          id="imaging"
+                          name="imaging"
+                          value={formData.imaging}
+                          onChange={handleChange}
+                          disabled={isLoading || formSubmitted || isStaff}
+                          className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed transition-all duration-200"
+                          placeholder="Imaging information"
+                        />
+                      </div>
+                      )}
+                      
+                      {/* Ultrasound (Optional) */}
+                      {!isStaff && (
+                      <div>
+                        <label htmlFor="ultrasound" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Ultrasound <span className="text-xs text-gray-500">(Optional)</span>
+                        </label>
+                        <input
+                          type="text"
+                          id="ultrasound"
+                          name="ultrasound"
+                          value={formData.ultrasound}
+                          onChange={handleChange}
+                          disabled={isLoading || formSubmitted || isStaff}
+                          className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed transition-all duration-200"
+                          placeholder="Ultrasound information"
                         />
                       </div>
                       )}

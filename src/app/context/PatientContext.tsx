@@ -21,6 +21,8 @@ export interface Patient {
   note: string;
   tableData?: string;
   imageUrl?: string;
+  imaging?: string;
+  ultrasound?: string;
   createdAt: string;
   userId?: string;
 }
@@ -42,6 +44,8 @@ interface PatientRecord {
   note: string;
   table_data?: string;
   image_url?: string;
+  imaging?: string;
+  ultrasound?: string;
   created_at: string;
   user_id: string;
 }
@@ -134,6 +138,8 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
           note: p.note,
           tableData: p.table_data || '',
           imageUrl: p.image_url || '',
+          imaging: p.imaging || '',
+          ultrasound: p.ultrasound || '',
           createdAt: p.created_at,
           userId: p.user_id
         }));
@@ -177,6 +183,8 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
         imageUrl: '',
         note: '',
         tableData: '',
+        imaging: '',
+        ultrasound: '',
       } : patientData;
 
       // Generate Clinic ID: [PatientCount][DDMMYY]
@@ -228,6 +236,8 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
           note: sanitizedData.note || '',
           table_data: sanitizedData.tableData || '',
           image_url: sanitizedData.imageUrl || '',
+          imaging: sanitizedData.imaging || '',
+          ultrasound: sanitizedData.ultrasound || '',
           user_id: userId
         })
         .select();
@@ -255,6 +265,8 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
             note: data[0].note,
             tableData: data[0].table_data || '',
             imageUrl: data[0].image_url || '',
+            imaging: data[0].imaging || '',
+            ultrasound: data[0].ultrasound || '',
             createdAt: data[0].created_at,
             userId: data[0].user_id
           };
@@ -324,6 +336,8 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
       if (patientData.note !== undefined) dbData.note = patientData.note;
       if (patientData.tableData !== undefined) dbData.table_data = patientData.tableData;
       if (patientData.imageUrl !== undefined) dbData.image_url = patientData.imageUrl;
+      if (patientData.imaging !== undefined) dbData.imaging = patientData.imaging;
+      if (patientData.ultrasound !== undefined) dbData.ultrasound = patientData.ultrasound;
 
       // Always use Supabase for data storage
       const { error } = await supabase

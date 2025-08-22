@@ -25,6 +25,8 @@ export default function PatientEditForm({ patient, onSubmit, onCancel, isLoading
     note: patient.note || '',
     tableData: patient.tableData || '',
     imageUrl: patient.imageUrl || '',
+    imaging: patient.imaging || '',
+    ultrasound: patient.ultrasound || '',
     // clinicId is read-only, not included in editable form
   });
   
@@ -106,6 +108,8 @@ export default function PatientEditForm({ patient, onSubmit, onCancel, isLoading
       note: patient.note || '',
       tableData: patient.tableData || '',
       imageUrl: patient.imageUrl || '',
+      imaging: patient.imaging || '',
+      ultrasound: patient.ultrasound || '',
       // clinicId is read-only, not included in editable form
     });
     
@@ -215,7 +219,6 @@ export default function PatientEditForm({ patient, onSubmit, onCancel, isLoading
             name="age"
             value={formData.age}
             onChange={handleChange}
-            required
             disabled={isLoading}
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed"
           />
@@ -232,7 +235,6 @@ export default function PatientEditForm({ patient, onSubmit, onCancel, isLoading
             name="hospitalFileNumber"
             value={formData.hospitalFileNumber}
             onChange={handleChange}
-            required
             disabled={isLoading}
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed"
           />
@@ -249,7 +251,6 @@ export default function PatientEditForm({ patient, onSubmit, onCancel, isLoading
             name="mobileNumber"
             value={formData.mobileNumber}
             onChange={handleChange}
-            required
             disabled={isLoading}
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed"
           />
@@ -265,7 +266,6 @@ export default function PatientEditForm({ patient, onSubmit, onCancel, isLoading
             name="sex"
             value={formData.sex}
             onChange={handleChange}
-            required
             disabled={isLoading}
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed"
           >
@@ -287,7 +287,6 @@ export default function PatientEditForm({ patient, onSubmit, onCancel, isLoading
             name="ageOfDiagnosis"
             value={formData.ageOfDiagnosis}
             onChange={handleChange}
-            required
             disabled={isLoading}
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed"
           />
@@ -304,7 +303,6 @@ export default function PatientEditForm({ patient, onSubmit, onCancel, isLoading
             name="diagnosis"
             value={formData.diagnosis}
             onChange={handleChange}
-            required
             disabled={isLoading}
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed"
           />
@@ -321,7 +319,6 @@ export default function PatientEditForm({ patient, onSubmit, onCancel, isLoading
             name="treatment"
             value={formData.treatment}
             onChange={handleChange}
-            required
             disabled={isLoading}
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed"
           />
@@ -369,6 +366,40 @@ export default function PatientEditForm({ patient, onSubmit, onCancel, isLoading
             placeholder="URL to patient image"
           />
         </div>
+
+        {/* Imaging */}
+        <div>
+          <label htmlFor="imaging" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Imaging <span className="text-xs text-gray-500">(Optional)</span>
+          </label>
+          <input
+            type="text"
+            id="imaging"
+            name="imaging"
+            value={formData.imaging}
+            onChange={handleChange}
+            disabled={isLoading}
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed"
+            placeholder="Imaging information"
+          />
+        </div>
+
+        {/* Ultrasound */}
+        <div>
+          <label htmlFor="ultrasound" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Ultrasound <span className="text-xs text-gray-500">(Optional)</span>
+          </label>
+          <input
+            type="text"
+            id="ultrasound"
+            name="ultrasound"
+            value={formData.ultrasound}
+            onChange={handleChange}
+            disabled={isLoading}
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed"
+            placeholder="Ultrasound information"
+          />
+        </div>
       </div>
 
       {/* Response */}
@@ -376,16 +407,15 @@ export default function PatientEditForm({ patient, onSubmit, onCancel, isLoading
         <label htmlFor="response" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
           Response
         </label>
-        <input
-          type="text"
-          id="response"
-          name="response"
-          value={formData.response}
-          onChange={handleChange}
-          required
-          disabled={isLoading}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed"
-        />
+                  <input
+            type="text"
+            id="response"
+            name="response"
+            value={formData.response}
+            onChange={handleChange}
+            disabled={isLoading}
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed"
+          />
       </div>
 
       {/* Notes */}
