@@ -38,8 +38,8 @@ export default function PatientsPage() {
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
 
-  // Print treatment function
-  const handlePrintTreatment = (patient: Patient) => {
+  // Generic print function to handle all print types
+  const handlePrintGeneric = (patient: Patient, content: string, title: string) => {
     // Create a new window for the print document
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
@@ -59,7 +59,7 @@ export default function PatientsPage() {
       <!DOCTYPE html>
       <html>
       <head>
-        <title>Treatment Card - ${patient.name}</title>
+        <title>${title} - ${patient.name}</title>
                   <style>
             /* Reset all margins and paddings */
             * {
@@ -243,8 +243,8 @@ export default function PatientsPage() {
             <!-- Separator line -->
             <div class="separator"></div>
             
-            <!-- Current treatment (without label) -->
-            <div class="treatment-content">${patient.currentTreatment || 'No current treatment specified.'}</div>
+            <!-- Content (without label) -->
+            <div class="treatment-content">${content}</div>
           </div>
         </div>
         
@@ -282,6 +282,30 @@ export default function PatientsPage() {
     
     // Finish writing and close the document
     printWindow.document.close();
+  };
+
+  // Print treatment function
+  const handlePrintTreatment = (patient: Patient) => {
+    const content = patient.currentTreatment || 'No current treatment specified.';
+    handlePrintGeneric(patient, content, 'Treatment Card');
+  };
+  
+  // Print Lab Text function
+  const handlePrintLabText = (patient: Patient) => {
+    const content = patient.labText || 'No lab text specified.';
+    handlePrintGeneric(patient, content, 'Lab Text Card');
+  };
+  
+  // Print Ultrasound function
+  const handlePrintUltrasound = (patient: Patient) => {
+    const content = patient.ultrasound || 'No ultrasound information specified.';
+    handlePrintGeneric(patient, content, 'Ultrasound Card');
+  };
+  
+  // Print Imaging function
+  const handlePrintImaging = (patient: Patient) => {
+    const content = patient.imaging || 'No imaging information specified.';
+    handlePrintGeneric(patient, content, 'Imaging Card');
   };
 
   // Handle report generation
@@ -936,8 +960,8 @@ export default function PatientsPage() {
                                 Print
                               </button>
                             </div>
-                            <div className="mt-1 bg-white dark:bg-gray-800 p-2 rounded border border-gray-200 dark:border-gray-600">
-                              <p className="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap">{selectedPatient.currentTreatment}</p>
+                            <div className="mt-1 bg-white dark:bg-gray-800 p-2 rounded border border-gray-200 dark:border-gray-600 max-h-40 overflow-y-auto">
+                              <p className="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap break-words">{selectedPatient.currentTreatment}</p>
                             </div>
                           </div>
                         ) : null}
@@ -952,21 +976,63 @@ export default function PatientsPage() {
                           </div>
                         )}
                         {selectedPatient.imaging && (
-                          <div className="flex justify-between">
-                            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Imaging</span>
-                            <span className="text-sm text-gray-900 dark:text-gray-100">{selectedPatient.imaging}</span>
+                          <div className="flex flex-col">
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Imaging</span>
+                              <button
+                                onClick={() => handlePrintImaging(selectedPatient)}
+                                title="Print imaging card for this patient"
+                                className="flex items-center px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs"
+                              >
+                                <svg className="h-3 w-3 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                                </svg>
+                                Print
+                              </button>
+                            </div>
+                            <div className="mt-1 bg-white dark:bg-gray-800 p-2 rounded border border-gray-200 dark:border-gray-600 max-h-40 overflow-y-auto">
+                              <span className="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap break-words">{selectedPatient.imaging}</span>
+                            </div>
                           </div>
                         )}
                         {selectedPatient.ultrasound && (
-                          <div className="flex justify-between">
-                            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Ultrasound</span>
-                            <span className="text-sm text-gray-900 dark:text-gray-100">{selectedPatient.ultrasound}</span>
+                          <div className="flex flex-col">
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Ultrasound</span>
+                              <button
+                                onClick={() => handlePrintUltrasound(selectedPatient)}
+                                title="Print ultrasound card for this patient"
+                                className="flex items-center px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs"
+                              >
+                                <svg className="h-3 w-3 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                                </svg>
+                                Print
+                              </button>
+                            </div>
+                            <div className="mt-1 bg-white dark:bg-gray-800 p-2 rounded border border-gray-200 dark:border-gray-600 max-h-40 overflow-y-auto">
+                              <span className="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap break-words">{selectedPatient.ultrasound}</span>
+                            </div>
                           </div>
                         )}
                         {selectedPatient.labText && (
-                          <div className="flex justify-between">
-                            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Lab Text</span>
-                            <span className="text-sm text-gray-900 dark:text-gray-100">{selectedPatient.labText}</span>
+                          <div className="flex flex-col">
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Lab Text</span>
+                              <button
+                                onClick={() => handlePrintLabText(selectedPatient)}
+                                title="Print lab text card for this patient"
+                                className="flex items-center px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs"
+                              >
+                                <svg className="h-3 w-3 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                                </svg>
+                                Print
+                              </button>
+                            </div>
+                            <div className="mt-1 bg-white dark:bg-gray-800 p-2 rounded border border-gray-200 dark:border-gray-600 max-h-40 overflow-y-auto">
+                              <span className="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap break-words">{selectedPatient.labText}</span>
+                            </div>
                           </div>
                         )}
                         {selectedPatient.imageUrl && (
