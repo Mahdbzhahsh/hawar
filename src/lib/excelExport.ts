@@ -18,6 +18,9 @@ export const exportToExcel = (patients: Patient[], fileName: string = 'patients-
       'Response': patient.response,
       'Note': patient.note,
       'Image URL': patient.imageUrl,
+      'Imaging': patient.imaging,
+      'Ultrasound': patient.ultrasound,
+      'Lab Text': patient.labText,
       'Created At': new Date(patient.createdAt).toLocaleDateString()
     }))
   );
@@ -37,6 +40,9 @@ export const exportToExcel = (patients: Patient[], fileName: string = 'patients-
     { wch: 15 }, // Response
     { wch: 30 }, // Note
     { wch: 40 }, // Image URL
+    { wch: 30 }, // Imaging
+    { wch: 30 }, // Ultrasound
+    { wch: 30 }, // Lab Text
     { wch: 12 }  // Created At
   ];
   worksheet['!cols'] = columnWidths;
