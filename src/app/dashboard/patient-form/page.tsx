@@ -445,12 +445,12 @@ export default function PatientForm() {
                         <label htmlFor="imaging" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           Imaging <span className="text-xs text-gray-500">(Optional)</span>
                         </label>
-                        <input
-                          type="text"
+                        <textarea
                           id="imaging"
                           name="imaging"
                           value={formData.imaging}
                           onChange={handleChange}
+                          rows={3}
                           disabled={isLoading || formSubmitted || isStaff}
                           className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed transition-all duration-200"
                           placeholder="Imaging information"
@@ -464,12 +464,12 @@ export default function PatientForm() {
                         <label htmlFor="ultrasound" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           Ultrasound <span className="text-xs text-gray-500">(Optional)</span>
                         </label>
-                        <input
-                          type="text"
+                        <textarea
                           id="ultrasound"
                           name="ultrasound"
                           value={formData.ultrasound}
                           onChange={handleChange}
+                          rows={3}
                           disabled={isLoading || formSubmitted || isStaff}
                           className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed transition-all duration-200"
                           placeholder="Ultrasound information"
@@ -483,12 +483,12 @@ export default function PatientForm() {
                         <label htmlFor="labText" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           Lab Text <span className="text-xs text-gray-500">(Optional)</span>
                         </label>
-                        <input
-                          type="text"
+                        <textarea
                           id="labText"
                           name="labText"
                           value={formData.labText}
                           onChange={handleChange}
+                          rows={3}
                           disabled={isLoading || formSubmitted || isStaff}
                           className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed transition-all duration-200"
                           placeholder="Lab text information"

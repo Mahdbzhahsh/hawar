@@ -160,15 +160,18 @@ export default function PatientsPage() {
             /* Separator line */
             .separator {
               border-bottom: 1px dashed #000;
-              margin-bottom: 20px;
+              margin-bottom: 35px; /* Further increased from 25px to 35px */
               width: 100%;
             }
             
             /* Current treatment */
             .treatment-content {
               font-size: 16px;
-              line-height: 1.4;
+              line-height: 1.6; /* Increased line height for better readability */
               white-space: pre-wrap;
+              padding-top: 15px; /* Increased padding top */
+              padding-left: 15px; /* Added padding left to move text more to the middle */
+              padding-right: 15px; /* Added padding right for balance */
             }
             
             @media print {

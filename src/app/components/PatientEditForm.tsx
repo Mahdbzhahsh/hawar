@@ -374,12 +374,12 @@ export default function PatientEditForm({ patient, onSubmit, onCancel, isLoading
           <label htmlFor="imaging" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Imaging <span className="text-xs text-gray-500">(Optional)</span>
           </label>
-          <input
-            type="text"
+          <textarea
             id="imaging"
             name="imaging"
             value={formData.imaging}
             onChange={handleChange}
+            rows={3}
             disabled={isLoading}
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed"
             placeholder="Imaging information"
@@ -391,12 +391,12 @@ export default function PatientEditForm({ patient, onSubmit, onCancel, isLoading
           <label htmlFor="ultrasound" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Ultrasound <span className="text-xs text-gray-500">(Optional)</span>
           </label>
-          <input
-            type="text"
+          <textarea
             id="ultrasound"
             name="ultrasound"
             value={formData.ultrasound}
             onChange={handleChange}
+            rows={3}
             disabled={isLoading}
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed"
             placeholder="Ultrasound information"
@@ -408,12 +408,12 @@ export default function PatientEditForm({ patient, onSubmit, onCancel, isLoading
           <label htmlFor="labText" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Lab Text <span className="text-xs text-gray-500">(Optional)</span>
           </label>
-          <input
-            type="text"
+          <textarea
             id="labText"
             name="labText"
             value={formData.labText}
             onChange={handleChange}
+            rows={3}
             disabled={isLoading}
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed"
             placeholder="Lab text information"
