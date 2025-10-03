@@ -24,7 +24,10 @@ export interface Patient {
   imaging?: string;
   ultrasound?: string;
   labText?: string;
+<<<<<<< HEAD
   report?: string;
+=======
+>>>>>>> 4da92c19b15254ae522c3b42fa52f51284a9727b
   createdAt: string;
   userId?: string;
 }
@@ -49,7 +52,10 @@ interface PatientRecord {
   imaging?: string;
   ultrasound?: string;
   lab_text?: string;
+<<<<<<< HEAD
   report?: string;
+=======
+>>>>>>> 4da92c19b15254ae522c3b42fa52f51284a9727b
   created_at: string;
   user_id: string;
 }
@@ -145,7 +151,10 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
           imaging: p.imaging || '',
           ultrasound: p.ultrasound || '',
           labText: p.lab_text || '',
+<<<<<<< HEAD
           report: p.report || '',
+=======
+>>>>>>> 4da92c19b15254ae522c3b42fa52f51284a9727b
           createdAt: p.created_at,
           userId: p.user_id
         }));
@@ -246,7 +255,10 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
           imaging: sanitizedData.imaging || '',
           ultrasound: sanitizedData.ultrasound || '',
           lab_text: sanitizedData.labText || '',
+<<<<<<< HEAD
           report: sanitizedData.report || '',
+=======
+>>>>>>> 4da92c19b15254ae522c3b42fa52f51284a9727b
           user_id: userId
         })
         .select();
@@ -277,7 +289,10 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
             imaging: data[0].imaging || '',
             ultrasound: data[0].ultrasound || '',
             labText: data[0].lab_text || '',
+<<<<<<< HEAD
             report: data[0].report || '',
+=======
+>>>>>>> 4da92c19b15254ae522c3b42fa52f51284a9727b
             createdAt: data[0].created_at,
             userId: data[0].user_id
           };
@@ -350,7 +365,10 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
       if (patientData.imaging !== undefined) dbData.imaging = patientData.imaging;
       if (patientData.ultrasound !== undefined) dbData.ultrasound = patientData.ultrasound;
       if (patientData.labText !== undefined) dbData.lab_text = patientData.labText;
+<<<<<<< HEAD
       if (patientData.report !== undefined) dbData.report = patientData.report;
+=======
+>>>>>>> 4da92c19b15254ae522c3b42fa52f51284a9727b
 
       // Always use Supabase for data storage
       const { error } = await supabase

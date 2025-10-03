@@ -32,7 +32,10 @@ export default function PatientForm() {
     imaging: '',
     ultrasound: '',
     labText: '',
+<<<<<<< HEAD
     report: '',
+=======
+>>>>>>> 4da92c19b15254ae522c3b42fa52f51284a9727b
     // clinicId is not included here as it's auto-generated
   });
   
@@ -148,7 +151,10 @@ export default function PatientForm() {
           imaging: '',
           ultrasound: '',
           labText: '',
+<<<<<<< HEAD
           report: '',
+=======
+>>>>>>> 4da92c19b15254ae522c3b42fa52f51284a9727b
         });
         // Reset table cells
         setTableCells(Array(8).fill(null).map(() => Array(8).fill('')));
@@ -422,11 +428,19 @@ export default function PatientForm() {
                       </div>
                       )}
                       
+<<<<<<< HEAD
                       {/* Patient Image URL */}
                       {!isStaff && (
                       <div>
                         <label htmlFor="imageUrl" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           Patient Image URL
+=======
+                      {/* Patient Image URL (Optional) */}
+                      {!isStaff && (
+                      <div>
+                        <label htmlFor="imageUrl" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Patient Image URL <span className="text-xs text-gray-500">(Optional)</span>
+>>>>>>> 4da92c19b15254ae522c3b42fa52f51284a9727b
                         </label>
                         <input
                           type="text"
@@ -441,11 +455,19 @@ export default function PatientForm() {
                       </div>
                       )}
                       
+<<<<<<< HEAD
                       {/* Imaging */}
                       {!isStaff && (
                       <div>
                         <label htmlFor="imaging" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           Imaging
+=======
+                      {/* Imaging (Optional) */}
+                      {!isStaff && (
+                      <div>
+                        <label htmlFor="imaging" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Imaging <span className="text-xs text-gray-500">(Optional)</span>
+>>>>>>> 4da92c19b15254ae522c3b42fa52f51284a9727b
                         </label>
                         <textarea
                           id="imaging"
@@ -460,11 +482,19 @@ export default function PatientForm() {
                       </div>
                       )}
                       
+<<<<<<< HEAD
                       {/* Ultrasound */}
                       {!isStaff && (
                       <div>
                         <label htmlFor="ultrasound" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           Ultrasound
+=======
+                      {/* Ultrasound (Optional) */}
+                      {!isStaff && (
+                      <div>
+                        <label htmlFor="ultrasound" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Ultrasound <span className="text-xs text-gray-500">(Optional)</span>
+>>>>>>> 4da92c19b15254ae522c3b42fa52f51284a9727b
                         </label>
                         <textarea
                           id="ultrasound"
@@ -479,6 +509,7 @@ export default function PatientForm() {
                       </div>
                       )}
                       
+<<<<<<< HEAD
                       {/* Report */}
                       {!isStaff && (
                       <div>
@@ -503,6 +534,13 @@ export default function PatientForm() {
                       <div>
                         <label htmlFor="labText" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           Lab Text
+=======
+                      {/* Lab Text (Optional) */}
+                      {!isStaff && (
+                      <div>
+                        <label htmlFor="labText" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Lab Text <span className="text-xs text-gray-500">(Optional)</span>
+>>>>>>> 4da92c19b15254ae522c3b42fa52f51284a9727b
                         </label>
                         <textarea
                           id="labText"

@@ -28,7 +28,10 @@ export default function PatientEditForm({ patient, onSubmit, onCancel, isLoading
     imaging: patient.imaging || '',
     ultrasound: patient.ultrasound || '',
     labText: patient.labText || '',
+<<<<<<< HEAD
     report: patient.report || '',
+=======
+>>>>>>> 4da92c19b15254ae522c3b42fa52f51284a9727b
     // clinicId is read-only, not included in editable form
   });
   
@@ -113,7 +116,10 @@ export default function PatientEditForm({ patient, onSubmit, onCancel, isLoading
       imaging: patient.imaging || '',
       ultrasound: patient.ultrasound || '',
       labText: patient.labText || '',
+<<<<<<< HEAD
       report: patient.report || '',
+=======
+>>>>>>> 4da92c19b15254ae522c3b42fa52f51284a9727b
       // clinicId is read-only, not included in editable form
     });
     
@@ -405,6 +411,7 @@ export default function PatientEditForm({ patient, onSubmit, onCancel, isLoading
           />
         </div>
         
+<<<<<<< HEAD
         {/* Report */}
         <div>
           <label htmlFor="report" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -422,6 +429,8 @@ export default function PatientEditForm({ patient, onSubmit, onCancel, isLoading
           />
         </div>
         
+=======
+>>>>>>> 4da92c19b15254ae522c3b42fa52f51284a9727b
         {/* Lab Text */}
         <div>
           <label htmlFor="labText" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">

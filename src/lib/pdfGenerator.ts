@@ -164,8 +164,12 @@ export const generatePatientPDF = async (patient: Patient) => {
       ['Response', patient.response || 'N/A'],
       ['Imaging', patient.imaging || 'N/A'],
       ['Ultrasound', patient.ultrasound || 'N/A'],
+<<<<<<< HEAD
       ['Lab Text', patient.labText || 'N/A'],
       ['Report', patient.report || 'N/A']
+=======
+      ['Lab Text', patient.labText || 'N/A']
+>>>>>>> 4da92c19b15254ae522c3b42fa52f51284a9727b
     ],
     theme: 'striped',
     headStyles: {
