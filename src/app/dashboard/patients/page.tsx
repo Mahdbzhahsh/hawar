@@ -5,9 +5,13 @@ import { usePatients, Patient } from '../../context/PatientContext';
 import Link from 'next/link';
 import PatientEditForm from '../../components/PatientEditForm';
 import { exportToExcel } from '@/lib/excelExport';
+import { generatePatientPDF } from '@/lib/pdfGenerator';
+import { supabase } from '@/lib/supabase';
+import { useAuth } from '../../context/AuthContext';
 
 export default function PatientsPage() {
   const { patients, deletePatient, editPatient, isLoading, error, refreshPatients } = usePatients();
+  const { isStaffAuth } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
@@ -34,8 +38,8 @@ export default function PatientsPage() {
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
 
-  // Print treatment function
-  const handlePrintTreatment = (patient: Patient) => {
+  // Generic print function to handle all print types
+  const handlePrintGeneric = (patient: Patient, content: string, title: string) => {
     // Create a new window for the print document
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
@@ -55,7 +59,7 @@ export default function PatientsPage() {
       <!DOCTYPE html>
       <html>
       <head>
-        <title>Treatment Card - ${patient.name}</title>
+        <title>${title} - ${patient.name}</title>
                   <style>
             /* Reset all margins and paddings */
             * {
@@ -156,15 +160,18 @@ export default function PatientsPage() {
             /* Separator line */
             .separator {
               border-bottom: 1px dashed #000;
-              margin-bottom: 20px;
+              margin-bottom: 35px; /* Further increased from 25px to 35px */
               width: 100%;
             }
             
             /* Current treatment */
             .treatment-content {
               font-size: 16px;
-              line-height: 1.4;
+              line-height: 1.6; /* Increased line height for better readability */
               white-space: pre-wrap;
+              padding-top: 15px; /* Increased padding top */
+              padding-left: 15px; /* Added padding left to move text more to the middle */
+              padding-right: 15px; /* Added padding right for balance */
             }
             
             @media print {
@@ -239,8 +246,8 @@ export default function PatientsPage() {
             <!-- Separator line -->
             <div class="separator"></div>
             
-            <!-- Current treatment (without label) -->
-            <div class="treatment-content">${patient.currentTreatment || 'No current treatment specified.'}</div>
+            <!-- Content (without label) -->
+            <div class="treatment-content">${content}</div>
           </div>
         </div>
         
@@ -278,6 +285,84 @@ export default function PatientsPage() {
     
     // Finish writing and close the document
     printWindow.document.close();
+  };
+
+  // Print treatment function
+  const handlePrintTreatment = (patient: Patient) => {
+    const content = patient.currentTreatment || 'No current treatment specified.';
+    handlePrintGeneric(patient, content, 'Treatment Card');
+  };
+  
+  // Print Lab Text function
+  const handlePrintLabText = (patient: Patient) => {
+    const content = patient.labText || 'No lab text specified.';
+    handlePrintGeneric(patient, content, 'Lab Text Card');
+  };
+  
+  // Print Ultrasound function
+  const handlePrintUltrasound = (patient: Patient) => {
+    const content = patient.ultrasound || 'No ultrasound information specified.';
+    handlePrintGeneric(patient, content, 'Ultrasound Card');
+  };
+  
+  // Print Imaging function
+  const handlePrintImaging = (patient: Patient) => {
+    const content = patient.imaging || 'No imaging information specified.';
+    handlePrintGeneric(patient, content, 'Imaging Card');
+  };
+  
+  // Print Report function
+  const handlePrintReport = (patient: Patient) => {
+    const content = patient.report || 'No report information specified.';
+    handlePrintGeneric(patient, content, 'Report Card');
+  };
+
+  // Handle report generation
+  const handleGenerateReport = async (patient: Patient) => {
+    try {
+      await generatePatientPDF(patient);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      alert('Failed to generate PDF report. Please try again.');
+    }
+  };
+
+  // Handle logging a visit (returning patient)
+  const handleLogVisit = async (patient: Patient) => {
+    try {
+      // Import the function to ensure visits table exists
+      const { ensureVisitsTableExists } = await import('@/lib/supabase');
+      
+      // Check if visits table exists
+      const visitsTableExists = await ensureVisitsTableExists();
+      
+      if (!visitsTableExists) {
+        alert('Unable to record visit. The visits table does not exist in the database.');
+        return;
+      }
+      
+      // Write a visit record; do not create duplicate patient
+      const { error } = await supabase.from('visits').insert({ patient_id: patient.id });
+      
+      if (error) {
+        console.error('Error inserting visit record:', error);
+        alert('Failed to record visit. Database error.');
+        return;
+      }
+      
+      alert('Visit recorded successfully.');
+      
+      // Refresh the visits count in reports if possible
+      try {
+        // This is a simple event to inform other components that visits have changed
+        window.dispatchEvent(new CustomEvent('visitsUpdated'));
+      } catch (e) {
+        // Ignore errors from event dispatch
+      }
+    } catch (e) {
+      console.error('Error logging visit:', e);
+      alert('Failed to record visit.');
+    }
   };
 
   // Refresh data when component mounts
@@ -322,7 +407,9 @@ export default function PatientsPage() {
             matchesSearch = Boolean(patient.treatment && patient.treatment.toLowerCase().includes(searchLower));
             break;
           case 'gender':
-            matchesSearch = Boolean(patient.sex && patient.sex.toLowerCase().includes(searchLower));
+            matchesSearch = Boolean(
+              patient.sex && patient.sex.trim().toLowerCase() === searchLower.trim().toLowerCase()
+            );
             break;
           case 'response':
             matchesSearch = Boolean(patient.response && patient.response.toLowerCase().includes(searchLower));
@@ -412,6 +499,10 @@ export default function PatientsPage() {
   // Handle Excel export
   const handleExportToExcel = () => {
     try {
+      if (isStaffAuth) {
+        alert("You don’t have permission to export data.");
+        return;
+      }
       setIsExporting(true);
       
       // Use the filtered patients if there's a search term, otherwise use all patients
@@ -490,28 +581,30 @@ export default function PatientsPage() {
               </svg>
               Add Patient
             </Link>
-            <button
-              onClick={handleExportToExcel}
-              disabled={isExporting || filteredPatients.length === 0}
-              className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white rounded-lg shadow-md transition duration-150 inline-flex items-center"
-            >
-              {isExporting ? (
-                <>
-                  <svg className="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Exporting...
-                </>
-              ) : (
-                <>
-                  <svg className="h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                  </svg>
-                  Export Excel
-                </>
-              )}
-            </button>
+            {!isStaffAuth && (
+              <button
+                onClick={handleExportToExcel}
+                disabled={isExporting || filteredPatients.length === 0}
+                className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white rounded-lg shadow-md transition duration-150 inline-flex items-center"
+              >
+                {isExporting ? (
+                  <>
+                    <svg className="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Exporting...
+                  </>
+                ) : (
+                  <>
+                    <svg className="h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    Export Excel
+                  </>
+                )}
+              </button>
+            )}
           </div>
         </div>
 
@@ -765,19 +858,41 @@ export default function PatientsPage() {
                     </div>
                     <div className="flex space-x-2">
                       <button 
-                        onClick={() => setIsEditing(true)}
-                        className="p-2 text-indigo-600 hover:bg-indigo-100 rounded-md transition duration-150"
+                        onClick={() => handleGenerateReport(selectedPatient)}
+                        className="p-2 text-green-600 hover:bg-green-100 rounded-md transition duration-150"
+                        title="Generate PDF Report"
                       >
                         <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
                       </button>
+                      <button 
+                        onClick={() => handleLogVisit(selectedPatient)}
+                        className="p-2 text-amber-600 hover:bg-amber-100 rounded-md transition duration-150"
+                        title="Log Visit (Returning Patient)"
+                      >
+                        <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </button>
+                      {!isStaffAuth && (
+                        <button 
+                          onClick={() => setIsEditing(true)}
+                          className="p-2 text-indigo-600 hover:bg-indigo-100 rounded-md transition duration-150"
+                          title="Edit Patient"
+                        >
+                          <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                        </button>
+                      )}
                       <button 
                         onClick={() => handleDeletePatient(selectedPatient.id)}
                         disabled={isDeleting === selectedPatient.id}
                         className={`p-2 text-red-600 hover:bg-red-100 rounded-md transition duration-150 ${
                           isDeleting === selectedPatient.id ? 'opacity-50 cursor-not-allowed' : ''
                         }`}
+                        title="Delete Patient"
                       >
                         {isDeleting === selectedPatient.id ? (
                           <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -797,79 +912,172 @@ export default function PatientsPage() {
                     <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
                       <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Personal Information</h3>
                       <div className="space-y-3">
-                        <div className="flex justify-between">
-                          <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Age</span>
-                          <span className="text-sm text-gray-900 dark:text-gray-100">{selectedPatient.age}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Sex</span>
-                          <span className="text-sm text-gray-900 dark:text-gray-100">{selectedPatient.sex}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Mobile</span>
-                          <span className="text-sm text-gray-900 dark:text-gray-100">{selectedPatient.mobileNumber}</span>
-                        </div>
+                        {selectedPatient.age && (
+                          <div className="flex justify-between">
+                            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Age</span>
+                            <span className="text-sm text-gray-900 dark:text-gray-100">{selectedPatient.age}</span>
+                          </div>
+                        )}
+                        {selectedPatient.sex && (
+                          <div className="flex justify-between">
+                            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Sex</span>
+                            <span className="text-sm text-gray-900 dark:text-gray-100">{selectedPatient.sex}</span>
+                          </div>
+                        )}
+                        {selectedPatient.mobileNumber && (
+                          <div className="flex justify-between">
+                            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Mobile</span>
+                            <span className="text-sm text-gray-900 dark:text-gray-100">{selectedPatient.mobileNumber}</span>
+                          </div>
+                        )}
                       </div>
                     </div>
 
                     <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
                       <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Medical Information</h3>
                       <div className="space-y-3">
-                        <div className="flex justify-between">
-                          <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Diagnosis Age</span>
-                          <span className="text-sm text-gray-900 dark:text-gray-100">{selectedPatient.ageOfDiagnosis}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Diagnosis</span>
-                          <span className="text-sm text-gray-900 dark:text-gray-100">{selectedPatient.diagnosis}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Treatment</span>
-                          <span className="text-sm text-gray-900 dark:text-gray-100">{selectedPatient.treatment}</span>
-                        </div>
-                        <div className="flex flex-col">
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Current Treatment</span>
-                            <button
-                              onClick={() => {
-                                if (selectedPatient.currentTreatment) {
-                                  handlePrintTreatment(selectedPatient);
-                                } else {
-                                  alert('Please add current treatment information before printing.');
-                                }
-                              }}
-                              title="Print treatment card for this patient"
-                              className="flex items-center px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs"
-                            >
-                              <svg className="h-3 w-3 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                              </svg>
-                              Print
-                            </button>
+                        {selectedPatient.ageOfDiagnosis && (
+                          <div className="flex justify-between">
+                            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Diagnosis Age</span>
+                            <span className="text-sm text-gray-900 dark:text-gray-100">{selectedPatient.ageOfDiagnosis}</span>
                           </div>
-                          <div className="mt-1 bg-white dark:bg-gray-800 p-2 rounded border border-gray-200 dark:border-gray-600">
-                            <p className="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap">{selectedPatient.currentTreatment || 'No current treatment specified.'}</p>
+                        )}
+                        {selectedPatient.diagnosis && (
+                          <div className="flex justify-between">
+                            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Diagnosis</span>
+                            <span className="text-sm text-gray-900 dark:text-gray-100">{selectedPatient.diagnosis}</span>
                           </div>
-                        </div>
+                        )}
+                        {selectedPatient.treatment && (
+                          <div className="flex justify-between">
+                            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Treatment</span>
+                            <span className="text-sm text-gray-900 dark:text-gray-100">{selectedPatient.treatment}</span>
+                          </div>
+                        )}
+                        {selectedPatient.currentTreatment ? (
+                          <div className="flex flex-col">
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Current Treatment</span>
+                              <button
+                                onClick={() => handlePrintTreatment(selectedPatient)}
+                                title="Print treatment card for this patient"
+                                className="flex items-center px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs"
+                              >
+                                <svg className="h-3 w-3 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                                </svg>
+                                Print
+                              </button>
+                            </div>
+                            <div className="mt-1 bg-white dark:bg-gray-800 p-2 rounded border border-gray-200 dark:border-gray-600 max-h-40 overflow-y-auto">
+                              <p className="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap break-words">{selectedPatient.currentTreatment}</p>
+                            </div>
+                          </div>
+                        ) : null}
                         <div className="flex justify-between">
                           <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Clinic ID</span>
                           <span className="text-sm text-gray-900 dark:text-gray-100">{selectedPatient.clinicId}</span>
                         </div>
-                        <div className="flex justify-between">
-                          <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Response</span>
-                          <span className="text-sm text-gray-900 dark:text-gray-100">{selectedPatient.response}</span>
-                        </div>
+                        {selectedPatient.response && (
+                          <div className="flex justify-between">
+                            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Response</span>
+                            <span className="text-sm text-gray-900 dark:text-gray-100">{selectedPatient.response}</span>
+                          </div>
+                        )}
+                        {selectedPatient.imaging && (
+                          <div className="flex flex-col">
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Imaging</span>
+                              <button
+                                onClick={() => handlePrintImaging(selectedPatient)}
+                                title="Print imaging card for this patient"
+                                className="flex items-center px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs"
+                              >
+                                <svg className="h-3 w-3 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                                </svg>
+                                Print
+                              </button>
+                            </div>
+                            <div className="mt-1 bg-white dark:bg-gray-800 p-2 rounded border border-gray-200 dark:border-gray-600 max-h-40 overflow-y-auto">
+                              <span className="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap break-words">{selectedPatient.imaging}</span>
+                            </div>
+                          </div>
+                        )}
+                        {selectedPatient.ultrasound && (
+                          <div className="flex flex-col">
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Ultrasound</span>
+                              <button
+                                onClick={() => handlePrintUltrasound(selectedPatient)}
+                                title="Print ultrasound card for this patient"
+                                className="flex items-center px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs"
+                              >
+                                <svg className="h-3 w-3 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                                </svg>
+                                Print
+                              </button>
+                            </div>
+                            <div className="mt-1 bg-white dark:bg-gray-800 p-2 rounded border border-gray-200 dark:border-gray-600 max-h-40 overflow-y-auto">
+                              <span className="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap break-words">{selectedPatient.ultrasound}</span>
+                            </div>
+                          </div>
+                        )}
+                        {selectedPatient.labText && (
+                          <div className="flex flex-col">
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Lab Text</span>
+                              <button
+                                onClick={() => handlePrintLabText(selectedPatient)}
+                                title="Print lab text card for this patient"
+                                className="flex items-center px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs"
+                              >
+                                <svg className="h-3 w-3 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                                </svg>
+                                Print
+                              </button>
+                            </div>
+                            <div className="mt-1 bg-white dark:bg-gray-800 p-2 rounded border border-gray-200 dark:border-gray-600 max-h-40 overflow-y-auto">
+                              <span className="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap break-words">{selectedPatient.labText}</span>
+                            </div>
+                          </div>
+                        )}
+                        {selectedPatient.report && (
+                          <div className="flex flex-col">
+                            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Report</span>
+                            <div className="mt-1 bg-white dark:bg-gray-800 p-2 rounded border border-gray-200 dark:border-gray-600 max-h-40 overflow-y-auto">
+                              <span className="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap break-words">{selectedPatient.report}</span>
+                            </div>
+                          </div>
+                        )}
+                        {selectedPatient.imageUrl && (
+                          <div className="flex flex-col mt-2">
+                            <span className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Patient Image URL</span>
+                            <a 
+                              href={selectedPatient.imageUrl} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-sm text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 break-all"
+                            >
+                              {selectedPatient.imageUrl}
+                            </a>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
 
                   {/* Notes Section */}
-                  <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
-                    <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Notes</h3>
-                    <p className="text-sm text-gray-800 dark:text-gray-200">
-                      {selectedPatient.note || 'No notes available.'}
-                    </p>
-                  </div>
+                  {selectedPatient.note && (
+                    <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                      <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Notes</h3>
+                      <p className="text-sm text-gray-800 dark:text-gray-200">
+                        {selectedPatient.note}
+                      </p>
+                    </div>
+                  )}
 
                   {/* Table Data Section */}
                   {selectedPatient.tableData && (

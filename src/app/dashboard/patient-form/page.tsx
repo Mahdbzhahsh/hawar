@@ -1,14 +1,19 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { usePatients } from '../../context/PatientContext';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '../../context/AuthContext';
 
 export default function PatientForm() {
   const { addPatient, isLoading, error } = usePatients();
   const router = useRouter();
+  const { isStaffAuth } = useAuth();
   const [formSubmitted, setFormSubmitted] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
+
+  // For staff, restrict specific fields but allow submission
+  const isStaff = Boolean(isStaffAuth);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -23,6 +28,11 @@ export default function PatientForm() {
     response: '',
     note: '',
     tableData: '',
+    imageUrl: '',
+    imaging: '',
+    ultrasound: '',
+    labText: '',
+    report: '',
     // clinicId is not included here as it's auto-generated
   });
   
@@ -134,6 +144,11 @@ export default function PatientForm() {
           response: '',
           note: '',
           tableData: '',
+          imageUrl: '',
+          imaging: '',
+          ultrasound: '',
+          labText: '',
+          report: '',
         });
         // Reset table cells
         setTableCells(Array(8).fill(null).map(() => Array(8).fill('')));
@@ -332,6 +347,7 @@ export default function PatientForm() {
                       </div>
 
                       {/* Diagnosis */}
+                      {!isStaff && (
                       <div>
                         <label htmlFor="diagnosis" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           Diagnosis
@@ -342,13 +358,15 @@ export default function PatientForm() {
                           name="diagnosis"
                           value={formData.diagnosis}
                           onChange={handleChange}
-                          disabled={isLoading || formSubmitted}
+                           disabled={isLoading || formSubmitted || isStaff}
                           className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed transition-all duration-200"
                           placeholder="Patient diagnosis"
                         />
                       </div>
+                      )}
 
                       {/* Treatment */}
+                      {!isStaff && (
                       <div>
                         <label htmlFor="treatment" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           Treatment
@@ -359,13 +377,15 @@ export default function PatientForm() {
                           name="treatment"
                           value={formData.treatment}
                           onChange={handleChange}
-                          disabled={isLoading || formSubmitted}
+                           disabled={isLoading || formSubmitted || isStaff}
                           className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed transition-all duration-200"
                           placeholder="Treatment information"
                         />
                       </div>
+                      )}
 
                       {/* Response */}
+                      {!isStaff && (
                       <div>
                         <label htmlFor="response" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           Response
@@ -376,13 +396,15 @@ export default function PatientForm() {
                           name="response"
                           value={formData.response}
                           onChange={handleChange}
-                          disabled={isLoading || formSubmitted}
+                           disabled={isLoading || formSubmitted || isStaff}
                           className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed transition-all duration-200"
                           placeholder="Patient response"
                         />
                       </div>
+                      )}
 
                       {/* Current Treatment */}
+                      {!isStaff && (
                       <div>
                         <label htmlFor="currentTreatment" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           Current Treatment
@@ -393,16 +415,113 @@ export default function PatientForm() {
                           value={formData.currentTreatment}
                           onChange={handleChange}
                           rows={3}
-                          disabled={isLoading || formSubmitted}
+                           disabled={isLoading || formSubmitted || isStaff}
                           className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed transition-all duration-200"
                           placeholder="Current treatment details..."
                         />
                       </div>
+                      )}
+                      
+                      {/* Patient Image URL */}
+                      {!isStaff && (
+                      <div>
+                        <label htmlFor="imageUrl" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Patient Image URL
+                        </label>
+                        <input
+                          type="text"
+                          id="imageUrl"
+                          name="imageUrl"
+                          value={formData.imageUrl}
+                          onChange={handleChange}
+                           disabled={isLoading || formSubmitted || isStaff}
+                          className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed transition-all duration-200"
+                          placeholder="URL to patient image"
+                        />
+                      </div>
+                      )}
+                      
+                      {/* Imaging */}
+                      {!isStaff && (
+                      <div>
+                        <label htmlFor="imaging" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Imaging
+                        </label>
+                        <textarea
+                          id="imaging"
+                          name="imaging"
+                          value={formData.imaging}
+                          onChange={handleChange}
+                          rows={3}
+                          disabled={isLoading || formSubmitted || isStaff}
+                          className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed transition-all duration-200"
+                          placeholder="Imaging information"
+                        />
+                      </div>
+                      )}
+                      
+                      {/* Ultrasound */}
+                      {!isStaff && (
+                      <div>
+                        <label htmlFor="ultrasound" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Ultrasound
+                        </label>
+                        <textarea
+                          id="ultrasound"
+                          name="ultrasound"
+                          value={formData.ultrasound}
+                          onChange={handleChange}
+                          rows={3}
+                          disabled={isLoading || formSubmitted || isStaff}
+                          className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed transition-all duration-200"
+                          placeholder="Ultrasound information"
+                        />
+                      </div>
+                      )}
+                      
+                      {/* Report */}
+                      {!isStaff && (
+                      <div>
+                        <label htmlFor="report" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Report
+                        </label>
+                        <textarea
+                          id="report"
+                          name="report"
+                          value={formData.report}
+                          onChange={handleChange}
+                          rows={3}
+                          disabled={isLoading || formSubmitted || isStaff}
+                          className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed transition-all duration-200"
+                          placeholder="Report information"
+                        />
+                      </div>
+                      )}
+                      
+                      {/* Lab Text */}
+                      {!isStaff && (
+                      <div>
+                        <label htmlFor="labText" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Lab Text
+                        </label>
+                        <textarea
+                          id="labText"
+                          name="labText"
+                          value={formData.labText}
+                          onChange={handleChange}
+                          rows={3}
+                          disabled={isLoading || formSubmitted || isStaff}
+                          className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed transition-all duration-200"
+                          placeholder="Lab text information"
+                        />
+                      </div>
+                      )}
                     </div>
                   </div>
                 </div>
 
                 {/* Notes Section - Full Width at Bottom */}
+                {!isStaff && (
                 <div className="mt-8">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 pb-2 border-b border-gray-200 dark:border-gray-700">
                     Additional Notes
@@ -417,14 +536,16 @@ export default function PatientForm() {
                       value={formData.note}
                       onChange={handleChange}
                       rows={6}
-                      disabled={isLoading || formSubmitted}
+                       disabled={isLoading || formSubmitted || isStaff}
                       className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed transition-all duration-200"
                       placeholder="Enter any additional notes or observations about the patient..."
                     />
                   </div>
                 </div>
+                )}
                 
                 {/* Table Section with Dynamic Sizing */}
+                {!isStaff && (
                 <div className="mt-8">
                   <div className="flex items-center justify-between mb-4 pb-2 border-b border-gray-200 dark:border-gray-700">
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
@@ -435,7 +556,7 @@ export default function PatientForm() {
                         <button
                           type="button"
                           onClick={addTableColumn}
-                          disabled={isLoading || formSubmitted}
+                           disabled={isLoading || formSubmitted || isStaff}
                           className="flex items-center px-3 py-1.5 text-sm bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 rounded-l-lg border border-indigo-200 dark:border-indigo-800 focus:outline-none disabled:opacity-70"
                           title="Add column"
                         >
@@ -447,7 +568,7 @@ export default function PatientForm() {
                         <button
                           type="button"
                           onClick={removeTableColumn}
-                          disabled={isLoading || formSubmitted || tableCells[0].length <= 1}
+                           disabled={isLoading || formSubmitted || tableCells[0].length <= 1 || isStaff}
                           className="flex items-center px-3 py-1.5 text-sm bg-red-50 hover:bg-red-100 dark:bg-red-900/30 dark:hover:bg-red-900/50 text-red-700 dark:text-red-300 rounded-r-lg border border-red-200 dark:border-red-800 focus:outline-none disabled:opacity-50"
                           title="Remove column"
                         >
@@ -462,7 +583,7 @@ export default function PatientForm() {
                         <button
                           type="button"
                           onClick={addTableRow}
-                          disabled={isLoading || formSubmitted}
+                           disabled={isLoading || formSubmitted || isStaff}
                           className="flex items-center px-3 py-1.5 text-sm bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 rounded-l-lg border border-indigo-200 dark:border-indigo-800 focus:outline-none disabled:opacity-70"
                           title="Add row"
                         >
@@ -474,7 +595,7 @@ export default function PatientForm() {
                         <button
                           type="button"
                           onClick={removeTableRow}
-                          disabled={isLoading || formSubmitted || tableCells.length <= 1}
+                           disabled={isLoading || formSubmitted || tableCells.length <= 1 || isStaff}
                           className="flex items-center px-3 py-1.5 text-sm bg-red-50 hover:bg-red-100 dark:bg-red-900/30 dark:hover:bg-red-900/50 text-red-700 dark:text-red-300 rounded-r-lg border border-red-200 dark:border-red-800 focus:outline-none disabled:opacity-50"
                           title="Remove row"
                         >
@@ -513,7 +634,7 @@ export default function PatientForm() {
                                   name={`tableCell-${rowIndex}-${colIndex}`}
                                   value={cell}
                                   onChange={handleChange}
-                                  disabled={isLoading || formSubmitted}
+                                   disabled={isLoading || formSubmitted || isStaff}
                                   className="w-full px-2 py-1 bg-transparent text-gray-900 dark:text-white focus:outline-none text-sm"
 
                                 />
@@ -528,6 +649,7 @@ export default function PatientForm() {
                     Optional: Add any additional data in this table. Use the buttons above to add rows or columns.
                   </p>
                 </div>
+                )}
               </div>
 
               {/* Submit Button */}

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { supabase, ensurePatientsTableExists } from '@/lib/supabase';
+import { supabase, ensurePatientsTableExists, ensureVisitsTableExists } from '@/lib/supabase';
 import { useAuth } from './AuthContext';
 
 // Define the Patient interface
@@ -20,6 +20,11 @@ export interface Patient {
   response: string;
   note: string;
   tableData?: string;
+  imageUrl?: string;
+  imaging?: string;
+  ultrasound?: string;
+  labText?: string;
+  report?: string;
   createdAt: string;
   userId?: string;
 }
@@ -40,6 +45,11 @@ interface PatientRecord {
   response: string;
   note: string;
   table_data?: string;
+  image_url?: string;
+  imaging?: string;
+  ultrasound?: string;
+  lab_text?: string;
+  report?: string;
   created_at: string;
   user_id: string;
 }
@@ -62,7 +72,7 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tableChecked, setTableChecked] = useState(false);
-  const { session, isAuthenticated, userId } = useAuth();
+  const { session, isAuthenticated, userId, isStaffAuth } = useAuth();
 
   // Check if the patients table exists
   useEffect(() => {
@@ -72,6 +82,7 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
         if (!exists) {
           setError('Database table not found. Please contact the administrator.');
         }
+        await ensureVisitsTableExists();
         setTableChecked(true);
       } else {
         setTableChecked(true);
@@ -130,6 +141,11 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
           response: p.response,
           note: p.note,
           tableData: p.table_data || '',
+          imageUrl: p.image_url || '',
+          imaging: p.imaging || '',
+          ultrasound: p.ultrasound || '',
+          labText: p.lab_text || '',
+          report: p.report || '',
           createdAt: p.created_at,
           userId: p.user_id
         }));
@@ -162,6 +178,21 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
       if (!isAuthenticated || !userId) {
         throw new Error('Not authenticated');
       }
+
+      // For staff: ignore restricted fields on create (server-side guard)
+      const sanitizedData = isStaffAuth ? {
+        ...patientData,
+        diagnosis: '',
+        treatment: '',
+        currentTreatment: '',
+        response: '',
+        imageUrl: '',
+        note: '',
+        tableData: '',
+        imaging: '',
+        ultrasound: '',
+        labText: '',
+      } : patientData;
 
       // Generate Clinic ID: [PatientCount][DDMMYY]
       // 1. Get today's date in DDMMYY format
@@ -198,19 +229,24 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
       const { data, error } = await supabase
         .from('patients')
         .insert({
-          name: patientData.name, // Only name is required
-          age: patientData.age || '',
-          hospital_file_number: patientData.hospitalFileNumber || '',
-          mobile_number: patientData.mobileNumber || '',
-          sex: patientData.sex || '',
-          age_of_diagnosis: patientData.ageOfDiagnosis || '',
-          diagnosis: patientData.diagnosis || '',
-          treatment: patientData.treatment || '',
-          current_treatment: patientData.currentTreatment || '',
+          name: sanitizedData.name, // Only name is required
+          age: sanitizedData.age || '',
+          hospital_file_number: sanitizedData.hospitalFileNumber || '',
+          mobile_number: sanitizedData.mobileNumber || '',
+          sex: sanitizedData.sex || '',
+          age_of_diagnosis: sanitizedData.ageOfDiagnosis || '',
+          diagnosis: sanitizedData.diagnosis || '',
+          treatment: sanitizedData.treatment || '',
+          current_treatment: sanitizedData.currentTreatment || '',
           clinic_id: clinicId,
-          response: patientData.response || '',
-          note: patientData.note || '',
-          table_data: patientData.tableData || '',
+          response: sanitizedData.response || '',
+          note: sanitizedData.note || '',
+          table_data: sanitizedData.tableData || '',
+          image_url: sanitizedData.imageUrl || '',
+          imaging: sanitizedData.imaging || '',
+          ultrasound: sanitizedData.ultrasound || '',
+          lab_text: sanitizedData.labText || '',
+          report: sanitizedData.report || '',
           user_id: userId
         })
         .select();
@@ -237,11 +273,36 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
             response: data[0].response,
             note: data[0].note,
             tableData: data[0].table_data || '',
+            imageUrl: data[0].image_url || '',
+            imaging: data[0].imaging || '',
+            ultrasound: data[0].ultrasound || '',
+            labText: data[0].lab_text || '',
+            report: data[0].report || '',
             createdAt: data[0].created_at,
             userId: data[0].user_id
           };
         
         setPatients(prevPatients => [newPatient, ...prevPatients]);
+        
+        // Automatically log a visit for new patients
+        try {
+          // Check if visits table exists first
+          const visitsTableExists = await ensureVisitsTableExists();
+          
+          if (visitsTableExists) {
+            const { error: visitError } = await supabase.from('visits').insert({ patient_id: data[0].id });
+            if (visitError) {
+              console.error('Error logging initial visit for new patient:', visitError);
+            } else {
+              console.log('Successfully logged initial visit for new patient');
+            }
+          } else {
+            console.error('Skipping visit logging - visits table does not exist');
+          }
+        } catch (visitErr) {
+          console.error('Error logging initial visit for new patient:', visitErr);
+          // Don't throw - we still created the patient successfully
+        }
       }
     } catch (err) {
       console.error('Error adding patient:', err);
@@ -262,6 +323,13 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
         throw new Error('Not authenticated');
       }
 
+      // Disallow editing for staff role
+      if (isStaffAuth) {
+        const msg = "You don’t have permission to edit patient data.";
+        setError(msg);
+        throw new Error(msg);
+      }
+
       // Convert camelCase to snake_case for database
       const dbData: any = {};
       
@@ -278,6 +346,11 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
       if (patientData.response !== undefined) dbData.response = patientData.response;
       if (patientData.note !== undefined) dbData.note = patientData.note;
       if (patientData.tableData !== undefined) dbData.table_data = patientData.tableData;
+      if (patientData.imageUrl !== undefined) dbData.image_url = patientData.imageUrl;
+      if (patientData.imaging !== undefined) dbData.imaging = patientData.imaging;
+      if (patientData.ultrasound !== undefined) dbData.ultrasound = patientData.ultrasound;
+      if (patientData.labText !== undefined) dbData.lab_text = patientData.labText;
+      if (patientData.report !== undefined) dbData.report = patientData.report;
 
       // Always use Supabase for data storage
       const { error } = await supabase

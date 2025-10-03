@@ -118,11 +118,7 @@ export default function LoginPage() {
             </div>
           </form>
 
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Hint: Username is 'admin' and password is 'root'
-            </p>
-          </div>
+          {/* Removed credential hint for better security UX */}
         </div>
       </div>
     </div>
