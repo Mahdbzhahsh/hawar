@@ -310,15 +310,6 @@ export default function PatientsPage() {
     const content = patient.imaging || 'No imaging information specified.';
     handlePrintGeneric(patient, content, 'Imaging Card');
   };
-<<<<<<< HEAD
-  
-  // Print Report function
-  const handlePrintReport = (patient: Patient) => {
-    const content = patient.report || 'No report information specified.';
-    handlePrintGeneric(patient, content, 'Report Card');
-  };
-=======
->>>>>>> 4da92c19b15254ae522c3b42fa52f51284a9727b
 
   // Handle report generation
   const handleGenerateReport = async (patient: Patient) => {
@@ -1047,7 +1038,6 @@ export default function PatientsPage() {
                             </div>
                           </div>
                         )}
-<<<<<<< HEAD
                         {selectedPatient.report && (
                           <div className="flex flex-col">
                             <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Report</span>
@@ -1056,8 +1046,6 @@ export default function PatientsPage() {
                             </div>
                           </div>
                         )}
-=======
->>>>>>> 4da92c19b15254ae522c3b42fa52f51284a9727b
                         {selectedPatient.imageUrl && (
                           <div className="flex flex-col mt-2">
                             <span className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Patient Image URL</span>
