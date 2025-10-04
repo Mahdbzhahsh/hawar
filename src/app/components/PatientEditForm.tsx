@@ -28,6 +28,7 @@ export default function PatientEditForm({ patient, onSubmit, onCancel, isLoading
     imaging: patient.imaging || '',
     ultrasound: patient.ultrasound || '',
     labText: patient.labText || '',
+    report: patient.report || '',
 
     // clinicId is read-only, not included in editable form
   });
@@ -113,6 +114,7 @@ export default function PatientEditForm({ patient, onSubmit, onCancel, isLoading
       imaging: patient.imaging || '',
       ultrasound: patient.ultrasound || '',
       labText: patient.labText || '',
+      report: patient.report || '',
 
       // clinicId is read-only, not included in editable form
     });
