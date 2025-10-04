@@ -1038,6 +1038,14 @@ export default function PatientsPage() {
                             </div>
                           </div>
                         )}
+                        {selectedPatient.report && (
+                          <div className="flex flex-col">
+                            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Report</span>
+                            <div className="mt-1 bg-white dark:bg-gray-800 p-2 rounded border border-gray-200 dark:border-gray-600 max-h-40 overflow-y-auto">
+                              <span className="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap break-words">{selectedPatient.report}</span>
+                            </div>
+                          </div>
+                        )}
                         {selectedPatient.imageUrl && (
                           <div className="flex flex-col mt-2">
                             <span className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Patient Image URL</span>

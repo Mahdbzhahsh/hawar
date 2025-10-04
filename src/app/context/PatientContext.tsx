@@ -24,6 +24,7 @@ export interface Patient {
   imaging?: string;
   ultrasound?: string;
   labText?: string;
+  report?: string;
   createdAt: string;
   userId?: string;
 }
@@ -48,6 +49,7 @@ interface PatientRecord {
   imaging?: string;
   ultrasound?: string;
   lab_text?: string;
+  report?: string;
   created_at: string;
   user_id: string;
 }
@@ -143,6 +145,7 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
           imaging: p.imaging || '',
           ultrasound: p.ultrasound || '',
           labText: p.lab_text || '',
+          report: p.report || '',
           createdAt: p.created_at,
           userId: p.user_id
         }));
@@ -243,6 +246,7 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
           imaging: sanitizedData.imaging || '',
           ultrasound: sanitizedData.ultrasound || '',
           lab_text: sanitizedData.labText || '',
+          report: sanitizedData.report || '',
           user_id: userId
         })
         .select();
@@ -273,6 +277,7 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
             imaging: data[0].imaging || '',
             ultrasound: data[0].ultrasound || '',
             labText: data[0].lab_text || '',
+            report: data[0].report || '',
             createdAt: data[0].created_at,
             userId: data[0].user_id
           };
@@ -345,6 +350,7 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
       if (patientData.imaging !== undefined) dbData.imaging = patientData.imaging;
       if (patientData.ultrasound !== undefined) dbData.ultrasound = patientData.ultrasound;
       if (patientData.labText !== undefined) dbData.lab_text = patientData.labText;
+      if (patientData.report !== undefined) dbData.report = patientData.report;
 
       // Always use Supabase for data storage
       const { error } = await supabase
