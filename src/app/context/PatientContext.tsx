@@ -8,7 +8,7 @@ import { useAuth } from './AuthContext';
 export interface Patient {
   id: string;
   name: string;
-  age: string;
+  dob: string;
   hospitalFileNumber: string;
   mobileNumber: string;
   sex: string;
@@ -25,6 +25,7 @@ export interface Patient {
   ultrasound?: string;
   labText?: string;
   report?: string;
+  followUpDate?: string;
   createdAt: string;
   userId?: string;
 }
@@ -33,7 +34,7 @@ export interface Patient {
 interface PatientRecord {
   id: string;
   name: string;
-  age: string;
+  dob: string;
   hospital_file_number: string;
   mobile_number: string;
   sex: string;
@@ -50,6 +51,7 @@ interface PatientRecord {
   ultrasound?: string;
   lab_text?: string;
   report?: string;
+  follow_up_date?: string;
   created_at: string;
   user_id: string;
 }
@@ -88,7 +90,7 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
         setTableChecked(true);
       }
     }
-    
+
     if (!tableChecked && isAuthenticated) {
       checkTable();
     }
@@ -99,7 +101,7 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       if (!isAuthenticated || !userId) {
         // Not authenticated
         setPatients([]);
@@ -111,25 +113,25 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
         .from('patients')
         .select('*')
         .order('created_at', { ascending: false });
-      
+
       // If not the admin user, filter by user_id
       if (userId !== '00000000-0000-0000-0000-000000000000') {
         query = query.eq('user_id', userId);
       }
-      
+
       const { data, error } = await query;
-      
+
       if (error) {
         console.error('Supabase error fetching patients:', error);
         throw new Error(`Database error: ${error.message}`);
       }
-      
+
       if (data) {
         // Map from snake_case to camelCase
         const formattedPatients = data.map((p: PatientRecord) => ({
           id: p.id,
           name: p.name,
-          age: p.age,
+          dob: p.dob || '',
           hospitalFileNumber: p.hospital_file_number,
           mobileNumber: p.mobile_number,
           sex: p.sex,
@@ -146,10 +148,11 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
           ultrasound: p.ultrasound || '',
           labText: p.lab_text || '',
           report: p.report || '',
+          followUpDate: p.follow_up_date || '',
           createdAt: p.created_at,
           userId: p.user_id
         }));
-        
+
         setPatients(formattedPatients);
       }
     } catch (err) {
@@ -174,7 +177,7 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       if (!isAuthenticated || !userId) {
         throw new Error('Not authenticated');
       }
@@ -192,6 +195,7 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
         imaging: '',
         ultrasound: '',
         labText: '',
+        followUpDate: '',
       } : patientData;
 
       // Generate Clinic ID: [PatientCount][DDMMYY]
@@ -201,36 +205,36 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
       const month = String(today.getMonth() + 1).padStart(2, '0');
       const year = String(today.getFullYear()).slice(-2);
       const dateFormat = `${day}${month}${year}`;
-      
+
       // 2. Count patients added today to determine count
       const startOfDay = new Date(today);
       startOfDay.setHours(0, 0, 0, 0);
-      
+
       const { data: todaysPatients, error: countError } = await supabase
         .from('patients')
         .select('id')
         .gte('created_at', startOfDay.toISOString());
-        
+
       if (countError) {
         console.error('Error counting today\'s patients:', countError);
         throw new Error(`Database error: ${countError.message}`);
       }
-      
+
       // Add 1 to the count (zero-indexed array)
       const patientCount = (todaysPatients?.length || 0) + 1;
-      
+
       // Create clinic ID with 2-digit patient count (padded with leading zero if needed)
       const patientCountFormatted = String(patientCount).padStart(2, '0');
-      
+
       // Create clinic ID
       const clinicId = `${patientCountFormatted}${dateFormat}`;
-      
+
       // Always use Supabase for data storage
       const { data, error } = await supabase
         .from('patients')
         .insert({
           name: sanitizedData.name, // Only name is required
-          age: sanitizedData.age || '',
+          dob: sanitizedData.dob || '',
           hospital_file_number: sanitizedData.hospitalFileNumber || '',
           mobile_number: sanitizedData.mobileNumber || '',
           sex: sanitizedData.sex || '',
@@ -247,48 +251,50 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
           ultrasound: sanitizedData.ultrasound || '',
           lab_text: sanitizedData.labText || '',
           report: sanitizedData.report || '',
+          follow_up_date: sanitizedData.followUpDate || '',
           user_id: userId
         })
         .select();
-      
+
       if (error) {
         console.error('Supabase error adding patient:', error);
         throw new Error(`Database error: ${error.message}`);
       }
-      
+
       if (data && data[0]) {
         // Add the new patient to the state
-                  const newPatient: Patient = {
-            id: data[0].id,
-            name: data[0].name,
-            age: data[0].age,
-            hospitalFileNumber: data[0].hospital_file_number,
-            mobileNumber: data[0].mobile_number,
-            sex: data[0].sex,
-            ageOfDiagnosis: data[0].age_of_diagnosis,
-            diagnosis: data[0].diagnosis,
-            treatment: data[0].treatment,
-            currentTreatment: data[0].current_treatment || '',
-            clinicId: data[0].clinic_id || '',
-            response: data[0].response,
-            note: data[0].note,
-            tableData: data[0].table_data || '',
-            imageUrl: data[0].image_url || '',
-            imaging: data[0].imaging || '',
-            ultrasound: data[0].ultrasound || '',
-            labText: data[0].lab_text || '',
-            report: data[0].report || '',
-            createdAt: data[0].created_at,
-            userId: data[0].user_id
-          };
-        
+        const newPatient: Patient = {
+          id: data[0].id,
+          name: data[0].name,
+          dob: data[0].dob || '',
+          hospitalFileNumber: data[0].hospital_file_number,
+          mobileNumber: data[0].mobile_number,
+          sex: data[0].sex,
+          ageOfDiagnosis: data[0].age_of_diagnosis,
+          diagnosis: data[0].diagnosis,
+          treatment: data[0].treatment,
+          currentTreatment: data[0].current_treatment || '',
+          clinicId: data[0].clinic_id || '',
+          response: data[0].response,
+          note: data[0].note,
+          tableData: data[0].table_data || '',
+          imageUrl: data[0].image_url || '',
+          imaging: data[0].imaging || '',
+          ultrasound: data[0].ultrasound || '',
+          labText: data[0].lab_text || '',
+          report: data[0].report || '',
+          followUpDate: data[0].follow_up_date || '',
+          createdAt: data[0].created_at,
+          userId: data[0].user_id
+        };
+
         setPatients(prevPatients => [newPatient, ...prevPatients]);
-        
+
         // Automatically log a visit for new patients
         try {
           // Check if visits table exists first
           const visitsTableExists = await ensureVisitsTableExists();
-          
+
           if (visitsTableExists) {
             const { error: visitError } = await supabase.from('visits').insert({ patient_id: data[0].id });
             if (visitError) {
@@ -318,7 +324,7 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       if (!isAuthenticated || !userId) {
         throw new Error('Not authenticated');
       }
@@ -332,9 +338,9 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
 
       // Convert camelCase to snake_case for database
       const dbData: any = {};
-      
+
       if (patientData.name !== undefined) dbData.name = patientData.name;
-      if (patientData.age !== undefined) dbData.age = patientData.age;
+      if (patientData.dob !== undefined) dbData.dob = patientData.dob;
       if (patientData.hospitalFileNumber !== undefined) dbData.hospital_file_number = patientData.hospitalFileNumber;
       if (patientData.mobileNumber !== undefined) dbData.mobile_number = patientData.mobileNumber;
       if (patientData.sex !== undefined) dbData.sex = patientData.sex;
@@ -351,6 +357,7 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
       if (patientData.ultrasound !== undefined) dbData.ultrasound = patientData.ultrasound;
       if (patientData.labText !== undefined) dbData.lab_text = patientData.labText;
       if (patientData.report !== undefined) dbData.report = patientData.report;
+      if (patientData.followUpDate !== undefined) dbData.follow_up_date = patientData.followUpDate;
 
       // Always use Supabase for data storage
       const { error } = await supabase
@@ -358,14 +365,14 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
         .update(dbData)
         .eq('id', id)
         .eq('user_id', userId);
-      
+
       if (error) {
         console.error('Supabase error editing patient:', error);
         throw new Error(`Database error: ${error.message}`);
       }
-      
+
       // Update local state
-      setPatients((prevPatients: Patient[]) => prevPatients.map((patient: Patient) => 
+      setPatients((prevPatients: Patient[]) => prevPatients.map((patient: Patient) =>
         patient.id === id ? { ...patient, ...patientData } : patient
       ));
     } catch (err) {
@@ -387,7 +394,7 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       if (!isAuthenticated || !userId) {
         throw new Error('Not authenticated');
       }
@@ -398,12 +405,12 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
         .delete()
         .eq('id', id)
         .eq('user_id', userId);
-      
+
       if (error) {
         console.error('Supabase error deleting patient:', error);
         throw new Error(`Database error: ${error.message}`);
       }
-      
+
       // Update local state
       setPatients((prevPatients: Patient[]) => prevPatients.filter((patient: Patient) => patient.id !== id));
     } catch (err) {
@@ -421,15 +428,15 @@ export function PatientProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <PatientContext.Provider value={{ 
-      patients, 
-      isLoading, 
-      error, 
-      addPatient, 
+    <PatientContext.Provider value={{
+      patients,
+      isLoading,
+      error,
+      addPatient,
       editPatient,
-      getPatient, 
+      getPatient,
       deletePatient,
-      refreshPatients 
+      refreshPatients
     }}>
       {children}
     </PatientContext.Provider>

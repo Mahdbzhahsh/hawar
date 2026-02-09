@@ -28,14 +28,31 @@ export default function PatientsPage() {
 
   // Format date for display
   const formatDate = (dateString: string) => {
-    const options: Intl.DateTimeFormatOptions = { 
-      year: 'numeric', 
-      month: 'short', 
+    const options: Intl.DateTimeFormatOptions = {
+      year: 'numeric',
+      month: 'short',
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit'
     };
     return new Date(dateString).toLocaleDateString(undefined, options);
+  };
+
+  // Calculate age from DOB
+  const calculateAge = (dob: string): number | string => {
+    if (!dob) return 'N/A';
+    const birthDate = new Date(dob);
+    if (isNaN(birthDate.getTime())) return 'N/A';
+
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+
+    return age;
   };
 
   // Generic print function to handle all print types
@@ -46,7 +63,7 @@ export default function PatientsPage() {
       alert('Please allow popups for this website');
       return;
     }
-    
+
     // Check if patient has necessary fields
     if (!patient.name || !patient.clinicId) {
       alert('Patient information is incomplete. Please ensure name and clinic ID are filled.');
@@ -119,7 +136,7 @@ export default function PatientsPage() {
             /* Treatment data container - positioned at middle left */
             .treatment-data {
               position: absolute;
-              top: 275px;  /* Moved 5px higher (2-4px as requested) */
+              top: 205px;  /* Moved higher to close gap (up from 275px) */
               left: 20px;
               width: 45%;
               padding: 10px;
@@ -135,7 +152,7 @@ export default function PatientsPage() {
               font-size: 10px;
               font-weight: bold;
               margin-right: 6px;
-              min-width: 60px;
+              min-width: 40px;
             }
             .name-value {
               font-size: 10px;
@@ -154,7 +171,7 @@ export default function PatientsPage() {
               font-size: 10px;
               font-weight: bold;
               margin-right: 6px;
-              min-width: 45px;
+              min-width: 40px;
             }
             .age-value {
               font-size: 10px;
@@ -236,7 +253,7 @@ export default function PatientsPage() {
               
               .treatment-data {
                 position: absolute !important;
-                top: 275px !important;
+                top: 205px !important;
                 left: 20px !important;
                 width: 45% !important;
               }
@@ -275,7 +292,7 @@ export default function PatientsPage() {
             <div class="details-row">
               <div class="age-container">
                 <div class="age-label">Age:</div>
-                <div class="age-value">${patient.age}</div>
+                <div class="age-value">${calculateAge(patient.dob)} / DOB: ${patient.dob || 'N/A'}</div>
               </div>
               
               <div class="clinic-container">
@@ -326,7 +343,7 @@ export default function PatientsPage() {
       </body>
       </html>
     `);
-    
+
     // Finish writing and close the document
     printWindow.document.close();
   };
@@ -336,19 +353,19 @@ export default function PatientsPage() {
     const content = patient.currentTreatment || 'No current treatment specified.';
     handlePrintGeneric(patient, content, 'Treatment Card');
   };
-  
-  // Print Lab Text function
+
+  // Print Lab Test function
   const handlePrintLabText = (patient: Patient) => {
-    const content = patient.labText || 'No lab text specified.';
-    handlePrintGeneric(patient, content, 'Lab Text Card');
+    const content = patient.labText || 'No lab test specified.';
+    handlePrintGeneric(patient, content, 'Lab Test Card');
   };
-  
+
   // Print Ultrasound function
   const handlePrintUltrasound = (patient: Patient) => {
     const content = patient.ultrasound || 'No ultrasound information specified.';
     handlePrintGeneric(patient, content, 'Ultrasound Card');
   };
-  
+
   // Print Imaging function
   const handlePrintImaging = (patient: Patient) => {
     const content = patient.imaging || 'No imaging information specified.';
@@ -370,26 +387,26 @@ export default function PatientsPage() {
     try {
       // Import the function to ensure visits table exists
       const { ensureVisitsTableExists } = await import('@/lib/supabase');
-      
+
       // Check if visits table exists
       const visitsTableExists = await ensureVisitsTableExists();
-      
+
       if (!visitsTableExists) {
         alert('Unable to record visit. The visits table does not exist in the database.');
         return;
       }
-      
+
       // Write a visit record; do not create duplicate patient
       const { error } = await supabase.from('visits').insert({ patient_id: patient.id });
-      
+
       if (error) {
         console.error('Error inserting visit record:', error);
         alert('Failed to record visit. Database error.');
         return;
       }
-      
+
       alert('Visit recorded successfully.');
-      
+
       // Refresh the visits count in reports if possible
       try {
         // This is a simple event to inform other components that visits have changed
@@ -412,17 +429,18 @@ export default function PatientsPage() {
   const filteredPatients = patients.filter(patient => {
     // Text search filter based on the active filter field
     let matchesSearch = true;
-    
+
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase();
-      
+
       if (activeFilter === 'all') {
         // Search all fields
         matchesSearch = Boolean(
           patient.name.toLowerCase().includes(searchLower) ||
           patient.hospitalFileNumber.toLowerCase().includes(searchLower) ||
           patient.diagnosis.toLowerCase().includes(searchLower) ||
-          (patient.age && patient.age.toString().toLowerCase().includes(searchLower)) ||
+          (patient.dob && calculateAge(patient.dob).toString().includes(searchLower)) ||
+          (patient.dob && patient.dob.includes(searchLower)) ||
           (patient.treatment && patient.treatment.toLowerCase().includes(searchLower)) ||
           (patient.sex && patient.sex.toLowerCase().includes(searchLower)) ||
           (patient.response && patient.response.toLowerCase().includes(searchLower)) ||
@@ -436,7 +454,7 @@ export default function PatientsPage() {
             matchesSearch = Boolean(patient.name.toLowerCase().includes(searchLower));
             break;
           case 'age':
-            matchesSearch = Boolean(patient.age && patient.age.toString().toLowerCase().includes(searchLower));
+            matchesSearch = Boolean(patient.dob && calculateAge(patient.dob).toString().includes(searchLower));
             break;
           case 'diagnosis':
             matchesSearch = Boolean(patient.diagnosis.toLowerCase().includes(searchLower));
@@ -461,17 +479,21 @@ export default function PatientsPage() {
           case 'clinicId':
             matchesSearch = Boolean(patient.clinicId && patient.clinicId.toLowerCase().includes(searchLower));
             break;
+          case 'dob':
+            matchesSearch = Boolean(patient.dob && patient.dob.includes(searchLower));
+            break;
           default:
             matchesSearch = true;
         }
       }
     }
-    
+
     // Age filter
     let matchesAge = true;
     if (ageFilter !== 'all') {
-      const patientAge = parseInt(patient.age) || 0;
-      
+      const calculatedAge = calculateAge(patient.dob);
+      const patientAge = typeof calculatedAge === 'number' ? calculatedAge : 0;
+
       switch (ageFilter) {
         case 'under18':
           matchesAge = patientAge < 18;
@@ -494,7 +516,7 @@ export default function PatientsPage() {
           matchesAge = true;
       }
     }
-    
+
     return matchesSearch && matchesAge;
   });
 
@@ -523,7 +545,7 @@ export default function PatientsPage() {
   // Handle patient edit form submission
   const handleEditSubmit = async (data: Partial<Patient>) => {
     if (!selectedPatient) return;
-    
+
     try {
       await editPatient(selectedPatient.id, data);
       // Update the selected patient with new data after successful edit
@@ -542,14 +564,14 @@ export default function PatientsPage() {
         return;
       }
       setIsExporting(true);
-      
+
       // Use the filtered patients if there's a search term, otherwise use all patients
       const dataToExport = filteredPatients;
-      
+
       // Generate a filename with current date
       const date = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
       const filename = `patients-data-${date}`;
-      
+
       // Export the data
       exportToExcel(dataToExport, filename);
     } catch (err) {
@@ -587,7 +609,7 @@ export default function PatientsPage() {
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 p-4 rounded-lg text-red-700 dark:text-red-300">
           <h3 className="text-lg font-medium mb-2">Error Loading Data</h3>
           <p>{error}</p>
-          <button 
+          <button
             onClick={() => refreshPatients()}
             className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 inline-flex items-center"
           >
@@ -653,25 +675,27 @@ export default function PatientsPage() {
               <input
                 type="text"
                 placeholder={
-                  activeFilter === 'all' 
-                    ? "Search all patient fields..." 
-                    : activeFilter === 'name' 
-                      ? "Search by patient name..." 
-                    : activeFilter === 'age' 
-                      ? "Search by age..." 
-                    : activeFilter === 'diagnosis' 
-                      ? "Search by diagnosis..." 
-                    : activeFilter === 'treatment' 
-                      ? "Search by treatment..." 
-                    : activeFilter === 'gender' 
-                      ? "Search by gender..." 
-                    : activeFilter === 'response' 
-                      ? "Search by response..." 
-                    : activeFilter === 'mobile' 
-                      ? "Search by mobile number..." 
-                    : activeFilter === 'hospitalFile' 
-                      ? "Search by hospital file number..." 
-                    : "Search by clinic ID..."
+                  activeFilter === 'all'
+                    ? "Search all patient fields..."
+                    : activeFilter === 'name'
+                      ? "Search by patient name..."
+                      : activeFilter === 'age'
+                        ? "Search by age..."
+                        : activeFilter === 'diagnosis'
+                          ? "Search by diagnosis..."
+                          : activeFilter === 'treatment'
+                            ? "Search by treatment..."
+                            : activeFilter === 'gender'
+                              ? "Search by gender..."
+                              : activeFilter === 'response'
+                                ? "Search by response..."
+                                : activeFilter === 'mobile'
+                                  ? "Search by mobile number..."
+                                  : activeFilter === 'hospitalFile'
+                                    ? "Search by hospital file number..."
+                                    : activeFilter === 'dob'
+                                      ? "Search by DOB..."
+                                      : "Search by clinic ID..."
                 }
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                 value={searchTerm}
@@ -683,9 +707,9 @@ export default function PatientsPage() {
                 </svg>
               </div>
             </div>
-            
+
             <div className="relative">
-              <button 
+              <button
                 onClick={() => setIsFilterOpen(!isFilterOpen)}
                 className="w-full md:w-auto px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg inline-flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-600 transition duration-150"
               >
@@ -699,7 +723,7 @@ export default function PatientsPage() {
                   </span>
                 )}
               </button>
-              
+
               {isFilterOpen && (
                 <div className="absolute z-50 mt-2 w-80 right-0 md:right-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-4">
                   {/* Search Field Selector */}
@@ -722,6 +746,7 @@ export default function PatientsPage() {
                       <option value="mobile">Mobile Number</option>
                       <option value="hospitalFile">Hospital File Number</option>
                       <option value="clinicId">Clinic ID</option>
+                      <option value="dob">Date of Birth</option>
                     </select>
                     <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                       Select "All Fields" to search across all patient data
@@ -746,7 +771,7 @@ export default function PatientsPage() {
                       <option value="custom">Custom Range</option>
                     </select>
                   </div>
-                  
+
                   {ageFilter === 'custom' && (
                     <div className="mb-4">
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -802,7 +827,7 @@ export default function PatientsPage() {
       {/* Mobile View: Toggle between list and details */}
       <div className="block md:hidden mb-4">
         {showMobileDetails && selectedPatient && (
-          <button 
+          <button
             onClick={handleBackToList}
             className="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-700 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
           >
@@ -825,18 +850,17 @@ export default function PatientsPage() {
             <div className="divide-y divide-gray-200 dark:divide-gray-700 max-h-[600px] overflow-y-auto">
               {filteredPatients.length > 0 ? (
                 filteredPatients.map((patient) => (
-                  <div 
-                    key={patient.id} 
-                    className={`p-4 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer ${
-                      selectedPatient?.id === patient.id ? 'bg-gray-100 dark:bg-gray-700 border-l-4 border-indigo-500' : ''
-                    }`}
+                  <div
+                    key={patient.id}
+                    className={`p-4 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer ${selectedPatient?.id === patient.id ? 'bg-gray-100 dark:bg-gray-700 border-l-4 border-indigo-500' : ''
+                      }`}
                     onClick={() => handleViewPatient(patient)}
                   >
                     <div className="flex justify-between items-start">
                       <div>
                         <h3 className="text-sm font-medium text-gray-900 dark:text-white">{patient.name}</h3>
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                          {patient.diagnosis} | Age: {patient.age}
+                          {patient.diagnosis} | Age: {calculateAge(patient.dob)} | DOB: {patient.dob}
                         </p>
                         <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
                           Added: {formatDate(patient.createdAt)}
@@ -859,7 +883,7 @@ export default function PatientsPage() {
                 </div>
               )}
             </div>
-            
+
             {/* Show loading indicator when refreshing data */}
             {isLoading && patients.length > 0 && (
               <div className="p-2 bg-gray-50 dark:bg-gray-700 text-center">
@@ -895,7 +919,7 @@ export default function PatientsPage() {
                       </p>
                     </div>
                     <div className="flex space-x-2">
-                      <button 
+                      <button
                         onClick={() => handleGenerateReport(selectedPatient)}
                         className="p-2 text-green-600 hover:bg-green-100 rounded-md transition duration-150"
                         title="Generate PDF Report"
@@ -904,7 +928,7 @@ export default function PatientsPage() {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
                       </button>
-                      <button 
+                      <button
                         onClick={() => handleLogVisit(selectedPatient)}
                         className="p-2 text-amber-600 hover:bg-amber-100 rounded-md transition duration-150"
                         title="Log Visit (Returning Patient)"
@@ -914,7 +938,7 @@ export default function PatientsPage() {
                         </svg>
                       </button>
                       {!isStaffAuth && (
-                        <button 
+                        <button
                           onClick={() => setIsEditing(true)}
                           className="p-2 text-indigo-600 hover:bg-indigo-100 rounded-md transition duration-150"
                           title="Edit Patient"
@@ -924,12 +948,11 @@ export default function PatientsPage() {
                           </svg>
                         </button>
                       )}
-                      <button 
+                      <button
                         onClick={() => handleDeletePatient(selectedPatient.id)}
                         disabled={isDeleting === selectedPatient.id}
-                        className={`p-2 text-red-600 hover:bg-red-100 rounded-md transition duration-150 ${
-                          isDeleting === selectedPatient.id ? 'opacity-50 cursor-not-allowed' : ''
-                        }`}
+                        className={`p-2 text-red-600 hover:bg-red-100 rounded-md transition duration-150 ${isDeleting === selectedPatient.id ? 'opacity-50 cursor-not-allowed' : ''
+                          }`}
                         title="Delete Patient"
                       >
                         {isDeleting === selectedPatient.id ? (
@@ -950,10 +973,10 @@ export default function PatientsPage() {
                     <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
                       <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Personal Information</h3>
                       <div className="space-y-3">
-                        {selectedPatient.age && (
+                        {selectedPatient.dob && (
                           <div className="flex justify-between">
-                            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Age</span>
-                            <span className="text-sm text-gray-900 dark:text-gray-100">{selectedPatient.age}</span>
+                            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">DOB</span>
+                            <span className="text-sm text-gray-900 dark:text-gray-100">{selectedPatient.dob}</span>
                           </div>
                         )}
                         {selectedPatient.sex && (
@@ -1065,7 +1088,7 @@ export default function PatientsPage() {
                         {selectedPatient.labText && (
                           <div className="flex flex-col">
                             <div className="flex justify-between items-center">
-                              <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Lab Text</span>
+                              <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Lab Test</span>
                               <button
                                 onClick={() => handlePrintLabText(selectedPatient)}
                                 title="Print lab text card for this patient"
@@ -1082,6 +1105,12 @@ export default function PatientsPage() {
                             </div>
                           </div>
                         )}
+                        {selectedPatient.followUpDate && (
+                          <div className="flex justify-between">
+                            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Follow Up Date</span>
+                            <span className="text-sm text-gray-900 dark:text-gray-100">{selectedPatient.followUpDate}</span>
+                          </div>
+                        )}
                         {selectedPatient.report && (
                           <div className="flex flex-col">
                             <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Report</span>
@@ -1093,9 +1122,9 @@ export default function PatientsPage() {
                         {selectedPatient.imageUrl && (
                           <div className="flex flex-col mt-2">
                             <span className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Patient Image URL</span>
-                            <a 
-                              href={selectedPatient.imageUrl} 
-                              target="_blank" 
+                            <a
+                              href={selectedPatient.imageUrl}
+                              target="_blank"
                               rel="noopener noreferrer"
                               className="text-sm text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 break-all"
                             >
@@ -1131,12 +1160,11 @@ export default function PatientsPage() {
                                   return tableData.map((row, rowIndex) => (
                                     <tr key={rowIndex}>
                                       {Array.isArray(row) && row.map((cell, colIndex) => (
-                                        <td 
+                                        <td
                                           key={`${rowIndex}-${colIndex}`}
-                                          className={`border border-gray-300 dark:border-gray-600 px-2 py-1 text-xs ${
-                                            cell ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100' : 
-                                                   'bg-gray-100 dark:bg-gray-800/50'
-                                          }`}
+                                          className={`border border-gray-300 dark:border-gray-600 px-2 py-1 text-xs ${cell ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100' :
+                                            'bg-gray-100 dark:bg-gray-800/50'
+                                            }`}
                                         >
                                           {cell || ''}
                                         </td>
@@ -1173,7 +1201,7 @@ export default function PatientsPage() {
                       Back to View
                     </button>
                   </div>
-                  <PatientEditForm 
+                  <PatientEditForm
                     patient={selectedPatient}
                     onSubmit={handleEditSubmit}
                     onCancel={() => setIsEditing(false)}

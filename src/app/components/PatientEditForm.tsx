@@ -13,7 +13,7 @@ interface PatientEditFormProps {
 export default function PatientEditForm({ patient, onSubmit, onCancel, isLoading }: PatientEditFormProps) {
   const [formData, setFormData] = useState({
     name: patient.name,
-    age: patient.age,
+    dob: patient.dob || '',
     hospitalFileNumber: patient.hospitalFileNumber,
     mobileNumber: patient.mobileNumber,
     sex: patient.sex,
@@ -29,21 +29,22 @@ export default function PatientEditForm({ patient, onSubmit, onCancel, isLoading
     ultrasound: patient.ultrasound || '',
     labText: patient.labText || '',
     report: patient.report || '',
+    followUpDate: patient.followUpDate || '',
 
     // clinicId is read-only, not included in editable form
   });
-  
+
   // State for table cells with dynamic sizing (default 8x8)
   const [tableCells, setTableCells] = useState(
     Array(8).fill(null).map(() => Array(8).fill(''))
   );
-  
+
   // Functions to add or remove rows/columns from the table
   const addTableRow = () => {
     const newRow = Array(tableCells[0].length).fill('');
     const newTableCells = [...tableCells, newRow];
     setTableCells(newTableCells);
-    
+
     // Update tableData in formData
     const tableDataString = JSON.stringify(newTableCells);
     setFormData(prev => ({
@@ -51,11 +52,11 @@ export default function PatientEditForm({ patient, onSubmit, onCancel, isLoading
       tableData: tableDataString
     }));
   };
-  
+
   const addTableColumn = () => {
     const newTableCells = tableCells.map(row => [...row, '']);
     setTableCells(newTableCells);
-    
+
     // Update tableData in formData
     const tableDataString = JSON.stringify(newTableCells);
     setFormData(prev => ({
@@ -63,13 +64,13 @@ export default function PatientEditForm({ patient, onSubmit, onCancel, isLoading
       tableData: tableDataString
     }));
   };
-  
+
   const removeTableRow = () => {
     if (tableCells.length <= 1) return; // Don't remove the last row
-    
+
     const newTableCells = tableCells.slice(0, -1); // Remove the last row
     setTableCells(newTableCells);
-    
+
     // Update tableData in formData
     const tableDataString = JSON.stringify(newTableCells);
     setFormData(prev => ({
@@ -77,13 +78,13 @@ export default function PatientEditForm({ patient, onSubmit, onCancel, isLoading
       tableData: tableDataString
     }));
   };
-  
+
   const removeTableColumn = () => {
     if (tableCells[0].length <= 1) return; // Don't remove the last column
-    
+
     const newTableCells = tableCells.map(row => row.slice(0, -1)); // Remove the last column
     setTableCells(newTableCells);
-    
+
     // Update tableData in formData
     const tableDataString = JSON.stringify(newTableCells);
     setFormData(prev => ({
@@ -91,7 +92,7 @@ export default function PatientEditForm({ patient, onSubmit, onCancel, isLoading
       tableData: tableDataString
     }));
   };
-  
+
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -99,7 +100,7 @@ export default function PatientEditForm({ patient, onSubmit, onCancel, isLoading
   useEffect(() => {
     setFormData({
       name: patient.name,
-      age: patient.age,
+      dob: patient.dob || '',
       hospitalFileNumber: patient.hospitalFileNumber,
       mobileNumber: patient.mobileNumber,
       sex: patient.sex,
@@ -115,10 +116,11 @@ export default function PatientEditForm({ patient, onSubmit, onCancel, isLoading
       ultrasound: patient.ultrasound || '',
       labText: patient.labText || '',
       report: patient.report || '',
+      followUpDate: patient.followUpDate || '',
 
       // clinicId is read-only, not included in editable form
     });
-    
+
     // Parse table data from JSON if it exists
     if (patient.tableData) {
       try {
@@ -141,14 +143,14 @@ export default function PatientEditForm({ patient, onSubmit, onCancel, isLoading
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    
+
     // Handle table cell changes
     if (name.startsWith('tableCell-')) {
       const [_, rowIndex, colIndex] = name.split('-');
       const newTableCells = [...tableCells];
       newTableCells[Number(rowIndex)][Number(colIndex)] = value;
       setTableCells(newTableCells);
-      
+
       // Convert table data to JSON string for storage
       const tableDataString = JSON.stringify(newTableCells);
       setFormData(prev => ({
@@ -164,15 +166,306 @@ export default function PatientEditForm({ patient, onSubmit, onCancel, isLoading
     }
   };
 
+  const handlePrintGeneric = (content: string, title: string) => {
+    // Create a new window for the print document
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      alert('Please allow popups for this website');
+      return;
+    }
+
+    // Calculate age for display
+    let ageDisplay = 'N/A';
+    if (patient.dob) {
+      const birthDate = new Date(patient.dob);
+      if (!isNaN(birthDate.getTime())) {
+        const today = new Date();
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const monthDiff = today.getMonth() - birthDate.getMonth();
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+          age--;
+        }
+        ageDisplay = age.toString();
+      }
+    }
+
+    // Create content for the print window
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>${title} - ${patient.name}</title>
+        <style>
+          /* Reset all margins and paddings */
+          * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+          }
+          
+          html, body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            background: white;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+          }
+          
+          .print-container {
+            width: 210mm; /* A5 landscape width */
+            height: 148mm; /* A5 landscape height */
+            position: relative;
+            border: none;
+            display: flex;
+            margin: 0 auto;
+            background: white;
+            page-break-inside: avoid;
+            page-break-after: always;
+          }
+          
+          .report-image {
+            width: 100%;
+            height: 100%;
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            object-fit: contain;
+            object-position: top left;
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: crisp-edges;
+            image-rendering: pixelated;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+          
+          /* Patient info container - positioned at top left */
+          .patient-info {
+            position: absolute;
+            top: 148px;
+            left: 20px;
+            width: 45%;
+            padding: 10px;
+            box-sizing: border-box;
+          }
+
+          /* Treatment data container - positioned at middle left */
+          .treatment-data {
+            position: absolute;
+            top: 205px;
+            left: 20px;
+            width: 45%;
+            padding: 10px;
+            box-sizing: border-box;
+          }
+          
+          /* Name field */
+          .name-row {
+            margin-bottom: 8px;
+            display: flex;
+          }
+          .name-label {
+            font-size: 10px;
+            font-weight: bold;
+            margin-right: 6px;
+            min-width: 40px;
+          }
+          .name-value {
+            font-size: 10px;
+          }
+          
+          /* Age and clinic ID row */
+          .details-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+          }
+          .age-container {
+            display: flex;
+          }
+          .age-label {
+            font-size: 10px;
+            font-weight: bold;
+            margin-right: 6px;
+            min-width: 40px;
+          }
+          .age-value {
+            font-size: 10px;
+          }
+          .clinic-container {
+            display: flex;
+            margin-right: 0;
+          }
+          .clinic-id-label {
+            font-size: 10px;
+            font-weight: bold;
+            margin-right: 6px;
+          }
+          .clinic-id-value {
+            font-size: 10px;
+          }
+          
+          /* Separator line */
+          .separator {
+            border-bottom: 1px dashed #000;
+            margin-bottom: 8px;
+            width: 100%;
+          }
+          
+          /* Content */
+          .treatment-content {
+            font-size: 10px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            padding-top: 10px;
+            padding-left: 10px;
+            padding-right: 10px;
+          }
+          
+          @media print {
+            @page {
+              size: A5 landscape;
+              margin: 0 !important;
+              padding: 0 !important;
+              border: none !important;
+            }
+            
+            html, body {
+              width: 210mm;
+              height: 148mm;
+              margin: 0 !important;
+              padding: 0 !important;
+              overflow: hidden;
+              background: white;
+            }
+            
+            .print-container {
+              width: 100%;
+              height: 100%;
+              margin: 0 !important;
+              padding: 0 !important;
+              position: absolute;
+              top: 0;
+              left: 0;
+            }
+            
+            .report-image {
+              width: 100% !important;
+              height: 100% !important;
+              object-fit: contain !important;
+              object-position: top left !important;
+              image-rendering: -webkit-optimize-contrast !important;
+              image-rendering: crisp-edges !important;
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+            }
+            
+            .patient-info {
+              position: absolute !important;
+              top: 148px !important;
+              left: 20px !important;
+              width: 45% !important;
+            }
+            
+            .treatment-data {
+              position: absolute !important;
+              top: 205px !important;
+              left: 20px !important;
+              width: 45% !important;
+            }
+            
+            .print-button {
+              display: none;
+            }
+          }
+        
+          .print-button {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 8px 16px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="print-container">
+          <img src="/drhawar.jpg" class="report-image" />
+          
+          <div class="patient-info">
+            <div class="name-row">
+              <div class="name-label">Name:</div>
+              <div class="name-value">${patient.name}</div>
+            </div>
+            
+            <div class="details-row">
+              <div class="age-container">
+                <div class="age-label">Age:</div>
+                <div class="age-value">${ageDisplay} / DOB: ${patient.dob || 'N/A'}</div>
+              </div>
+              
+              <div class="clinic-container">
+                <div class="clinic-id-label">clinic ID:</div>
+                <div class="clinic-id-value">${patient.clinicId}</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="treatment-data">
+            <div class="separator"></div>
+            <div class="treatment-content">${content}</div>
+          </div>
+        </div>
+        
+        <button class="print-button" onclick="window.print();return false;">Print</button>
+        <script>
+          window.onload = function() {
+            document.documentElement.style.width = '210mm';
+            document.documentElement.style.height = '148mm';
+            document.body.style.width = '210mm';
+            document.body.style.height = '148mm';
+            document.body.style.margin = '0';
+            document.body.style.padding = '0';
+            document.body.style.border = 'none';
+            document.body.style.overflow = 'hidden';
+            
+            const style = document.createElement('style');
+            style.textContent = "@media print { @page { margin: 0 !important; } body { margin: 0 !important; } }";
+            document.head.appendChild(style);
+            
+            setTimeout(function() {
+              window.print();
+            }, 800);
+          }
+        </script>
+      </body>
+      </html>
+    `);
+
+    printWindow.document.close();
+  };
+
+  const handlePrintReport = (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent form submission
+    const content = formData.report || 'No report information specified.';
+    handlePrintGeneric(content, 'Report Card');
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setSuccessMessage(null);
-    
+
     try {
       await onSubmit(formData);
       setSuccessMessage('Patient updated successfully');
-      
+
       // Clear success message after 3 seconds
       setTimeout(() => {
         setSuccessMessage(null);
@@ -189,13 +482,13 @@ export default function PatientEditForm({ patient, onSubmit, onCancel, isLoading
           {error}
         </div>
       )}
-      
+
       {successMessage && (
         <div className="mb-4 p-3 bg-green-50 border border-green-200 text-green-600 rounded-lg text-sm">
           {successMessage}
         </div>
       )}
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Name */}
         <div>
@@ -214,17 +507,18 @@ export default function PatientEditForm({ patient, onSubmit, onCancel, isLoading
           />
         </div>
 
-        {/* Age */}
+        {/* DOB */}
         <div>
-          <label htmlFor="age" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Age
+          <label htmlFor="dob" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            DOB <span className="text-xs text-gray-500">(Date of Birth)</span>
           </label>
           <input
             type="text"
-            id="age"
-            name="age"
-            value={formData.age}
+            id="dob"
+            name="dob"
+            value={formData.dob}
             onChange={handleChange}
+            placeholder="YYYY-MM-DD or Age"
             disabled={isLoading}
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed"
           />
@@ -345,7 +639,7 @@ export default function PatientEditForm({ patient, onSubmit, onCancel, isLoading
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed"
           />
         </div>
-        
+
         {/* Clinic ID (Read-only) */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -355,7 +649,7 @@ export default function PatientEditForm({ patient, onSubmit, onCancel, isLoading
             {patient.clinicId || 'Not assigned'}
           </div>
         </div>
-        
+
         {/* Image URL */}
         <div>
           <label htmlFor="imageUrl" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -406,12 +700,25 @@ export default function PatientEditForm({ patient, onSubmit, onCancel, isLoading
             placeholder="Ultrasound information"
           />
         </div>
-        
+
         {/* Report */}
         <div>
-          <label htmlFor="report" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Report <span className="text-xs text-gray-500">(Optional)</span>
-          </label>
+          <div className="flex justify-between items-center mb-1">
+            <label htmlFor="report" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Report <span className="text-xs text-gray-500">(Optional)</span>
+            </label>
+            <button
+              type="button"
+              onClick={handlePrintReport}
+              className="px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs flex items-center"
+              title="Print report"
+            >
+              <svg className="h-3 w-3 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+              </svg>
+              Print
+            </button>
+          </div>
           <textarea
             id="report"
             name="report"
@@ -423,12 +730,12 @@ export default function PatientEditForm({ patient, onSubmit, onCancel, isLoading
             placeholder="Report information"
           />
         </div>
-        
 
-        {/* Lab Text */}
+
+        {/* Lab Test */}
         <div>
           <label htmlFor="labText" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Lab Text <span className="text-xs text-gray-500">(Optional)</span>
+            Lab Test <span className="text-xs text-gray-500">(Optional)</span>
           </label>
           <textarea
             id="labText"
@@ -438,7 +745,24 @@ export default function PatientEditForm({ patient, onSubmit, onCancel, isLoading
             rows={3}
             disabled={isLoading}
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed"
-            placeholder="Lab text information"
+            placeholder="Lab test information"
+          />
+        </div>
+
+        {/* Follow up date */}
+        <div>
+          <label htmlFor="followUpDate" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Follow up date
+          </label>
+          <input
+            type="text"
+            id="followUpDate"
+            name="followUpDate"
+            value={formData.followUpDate}
+            onChange={handleChange}
+            disabled={isLoading}
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed"
+            placeholder="Follow up date"
           />
         </div>
       </div>
@@ -448,15 +772,15 @@ export default function PatientEditForm({ patient, onSubmit, onCancel, isLoading
         <label htmlFor="response" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
           Response
         </label>
-                  <input
-            type="text"
-            id="response"
-            name="response"
-            value={formData.response}
-            onChange={handleChange}
-            disabled={isLoading}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed"
-          />
+        <input
+          type="text"
+          id="response"
+          name="response"
+          value={formData.response}
+          onChange={handleChange}
+          disabled={isLoading}
+          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed"
+        />
       </div>
 
       {/* Notes */}
@@ -474,7 +798,7 @@ export default function PatientEditForm({ patient, onSubmit, onCancel, isLoading
           className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed"
         />
       </div>
-      
+
       {/* Data Table (with dynamic sizing) */}
       <div>
         <div className="flex items-center justify-between mb-1">
@@ -512,7 +836,7 @@ export default function PatientEditForm({ patient, onSubmit, onCancel, isLoading
                 </div>
               </button>
             </div>
-            
+
             <div className="flex space-x-1">
               <button
                 type="button"
@@ -551,8 +875,8 @@ export default function PatientEditForm({ patient, onSubmit, onCancel, isLoading
             <thead>
               <tr>
                 {tableCells[0].map((_, colIndex) => (
-                  <th 
-                    key={colIndex} 
+                  <th
+                    key={colIndex}
                     className="border border-gray-300 dark:border-gray-600 px-3 py-2 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 text-sm font-medium"
                   >
                     C{colIndex + 1}
@@ -564,8 +888,8 @@ export default function PatientEditForm({ patient, onSubmit, onCancel, isLoading
               {tableCells.map((row, rowIndex) => (
                 <tr key={rowIndex}>
                   {row.map((cell, colIndex) => (
-                    <td 
-                      key={`${rowIndex}-${colIndex}`} 
+                    <td
+                      key={`${rowIndex}-${colIndex}`}
                       className="border border-gray-300 dark:border-gray-600 px-1 py-1 bg-white dark:bg-gray-800"
                     >
                       <input

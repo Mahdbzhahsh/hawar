@@ -51,7 +51,7 @@ export default function ReportsPage() {
     try {
       // First check if visits table exists
       const visitsTableExists = await ensureVisitsTableExists();
-      
+
       if (!visitsTableExists) {
         console.warn("Visits table doesn't exist yet - showing zero visits for date");
         setVisitsForDate([]);
@@ -59,39 +59,39 @@ export default function ReportsPage() {
         setIsLoadingVisits(false);
         return;
       }
-      
+
       const start = new Date(date);
       start.setHours(0, 0, 0, 0);
       const end = new Date(date);
       end.setHours(23, 59, 59, 999);
-      
+
       const { data, error } = await supabase
         .from('visits')
         .select('id, patient_id, created_at')
         .gte('created_at', start.toISOString())
         .lte('created_at', end.toISOString())
         .order('created_at', { ascending: false });
-      
+
       if (error) {
         console.error('Error loading visits for date:', error);
         setVisitsForDate([]);
         setVisitPatients({});
         return;
       }
-      
+
       if (data) {
         setVisitsForDate(data);
-        
+
         // Get patient details for each visit
         const patientIds = Array.from(new Set(data.map(v => v.patient_id)));
         const patientMap: Record<string, Patient> = {};
-        
+
         if (patientIds.length > 0) {
           const { data: patientData, error: patientError } = await supabase
             .from('patients')
             .select('*')
             .in('id', patientIds);
-            
+
           if (patientError) {
             console.error('Error loading patient details:', patientError);
           } else if (patientData) {
@@ -99,7 +99,7 @@ export default function ReportsPage() {
               patientMap[p.id] = {
                 id: p.id,
                 name: p.name,
-                age: p.age,
+                dob: p.dob,
                 hospitalFileNumber: p.hospital_file_number,
                 mobileNumber: p.mobile_number,
                 sex: p.sex,
@@ -118,7 +118,7 @@ export default function ReportsPage() {
             });
           }
         }
-        
+
         setVisitPatients(patientMap);
       }
     } catch (e) {
@@ -132,24 +132,41 @@ export default function ReportsPage() {
 
   // Format time for display
   const formatTime = (dateString: string) => {
-    const options: Intl.DateTimeFormatOptions = { 
-      hour: '2-digit', 
+    const options: Intl.DateTimeFormatOptions = {
+      hour: '2-digit',
       minute: '2-digit',
-      hour12: true 
+      hour12: true
     };
     return new Date(dateString).toLocaleTimeString(undefined, options);
   };
 
   // Format date for display
   const formatDate = (dateString: string) => {
-    const options: Intl.DateTimeFormatOptions = { 
-      year: 'numeric', 
-      month: 'short', 
+    const options: Intl.DateTimeFormatOptions = {
+      year: 'numeric',
+      month: 'short',
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit'
     };
     return new Date(dateString).toLocaleDateString(undefined, options);
+  };
+
+  // Calculate age from DOB
+  const calculateAge = (dob: string): number | string => {
+    if (!dob) return 'N/A';
+    const birthDate = new Date(dob);
+    if (isNaN(birthDate.getTime())) return 'N/A';
+
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+
+    return age;
   };
 
   // Generic print function to handle all print types
@@ -160,7 +177,7 @@ export default function ReportsPage() {
       alert('Please allow popups for this website');
       return;
     }
-    
+
     // Check if patient has necessary fields
     if (!patient.name || !patient.clinicId) {
       alert('Patient information is incomplete. Please ensure name and clinic ID are filled.');
@@ -233,7 +250,7 @@ export default function ReportsPage() {
 /* Treatment data container - positioned at middle left */
 .treatment-data {
   position: absolute;
-  top: 275px;  /* Moved 5px higher (2-4px as requested) */
+  top: 205px;  /* Moved higher to close gap (up from 275px) */
   left: 20px;
   width: 45%;
   padding: 10px;
@@ -249,7 +266,7 @@ export default function ReportsPage() {
             font-size: 10px;
             font-weight: bold;
             margin-right: 6px;
-            min-width: 60px;
+            min-width: 40px;
           }
           .name-value {
             font-size: 10px;
@@ -268,7 +285,7 @@ export default function ReportsPage() {
             font-size: 10px;
             font-weight: bold;
             margin-right: 6px;
-            min-width: 45px;
+            min-width: 40px;
           }
           .age-value {
             font-size: 10px;
@@ -350,7 +367,7 @@ export default function ReportsPage() {
               
               .treatment-data {
                 position: absolute !important;
-                top: 275px !important;
+                top: 205px !important;
                 left: 20px !important;
                 width: 45% !important;
               }
@@ -389,7 +406,7 @@ export default function ReportsPage() {
             <div class="details-row">
               <div class="age-container">
                 <div class="age-label">Age:</div>
-                <div class="age-value">${patient.age}</div>
+                <div class="age-value">${calculateAge(patient.dob)} / DOB: ${patient.dob || 'N/A'}</div>
               </div>
               
               <div class="clinic-container">
@@ -440,7 +457,7 @@ export default function ReportsPage() {
       </body>
       </html>
     `);
-    
+
     // Finish writing and close the document
     printWindow.document.close();
   };
@@ -450,25 +467,25 @@ export default function ReportsPage() {
     const content = patient.currentTreatment || 'No current treatment specified.';
     handlePrintGeneric(patient, content, 'Treatment Card');
   };
-  
-  // Print Lab Text function
+
+  // Print Lab Test function
   const handlePrintLabText = (patient: Patient) => {
-    const content = patient.labText || 'No lab text specified.';
-    handlePrintGeneric(patient, content, 'Lab Text Card');
+    const content = patient.labText || 'No lab test specified.';
+    handlePrintGeneric(patient, content, 'Lab Test Card');
   };
-  
+
   // Print Ultrasound function
   const handlePrintUltrasound = (patient: Patient) => {
     const content = patient.ultrasound || 'No ultrasound information specified.';
     handlePrintGeneric(patient, content, 'Ultrasound Card');
   };
-  
+
   // Print Imaging function
   const handlePrintImaging = (patient: Patient) => {
     const content = patient.imaging || 'No imaging information specified.';
     handlePrintGeneric(patient, content, 'Imaging Card');
   };
-  
+
   // Print Report function
   const handlePrintReport = (patient: Patient) => {
     const content = patient.report || 'No report information specified.';
@@ -490,26 +507,26 @@ export default function ReportsPage() {
     try {
       // Import the function to ensure visits table exists
       const { ensureVisitsTableExists } = await import('@/lib/supabase');
-      
+
       // Check if visits table exists
       const visitsTableExists = await ensureVisitsTableExists();
-      
+
       if (!visitsTableExists) {
         alert('Unable to record visit. The visits table does not exist in the database.');
         return;
       }
-      
+
       // Write a visit record; do not create duplicate patient
       const { error } = await supabase.from('visits').insert({ patient_id: patient.id });
-      
+
       if (error) {
         console.error('Error inserting visit record:', error);
         alert('Failed to record visit. Database error.');
         return;
       }
-      
+
       alert('Visit recorded successfully.');
-      
+
       // Refresh the visits count in reports if possible
       try {
         // This is a simple event to inform other components that visits have changed
@@ -534,30 +551,30 @@ export default function ReportsPage() {
     try {
       // First check if visits table exists
       const visitsTableExists = await ensureVisitsTableExists();
-      
+
       if (!visitsTableExists) {
         console.warn("Visits table doesn't exist yet - showing zero visits");
         setVisitCountToday(0);
         setVisitPatientsToday([]);
         return;
       }
-      
+
       const start = new Date();
       start.setHours(0, 0, 0, 0);
       const end = new Date();
       end.setHours(23, 59, 59, 999);
-      
+
       const { data, error } = await supabase
         .from('visits')
         .select('id, patient_id, created_at')
         .gte('created_at', start.toISOString())
         .lte('created_at', end.toISOString());
-        
+
       if (error) {
         console.error('Error loading visits:', error);
         return;
       }
-      
+
       if (data) {
         setVisitCountToday(data.length);
         setVisitPatientsToday(Array.from(new Set(data.map(v => v.patient_id))));
@@ -566,26 +583,26 @@ export default function ReportsPage() {
       console.error('Failed to load visits:', e);
     }
   }, []);
-  
+
   // Event listener for visit updates
   useEffect(() => {
     // Handler for the custom event
     const handleVisitsUpdated = () => {
       loadTodaysVisits();
     };
-    
+
     // Add event listener
     window.addEventListener('visitsUpdated', handleVisitsUpdated);
-    
+
     // Cleanup
     return () => {
       window.removeEventListener('visitsUpdated', handleVisitsUpdated);
     };
   }, [loadTodaysVisits]);
-  
+
   useEffect(() => {
     document.title = 'Reports & Analytics';
-    
+
     // Load today's visits count
     loadTodaysVisits();
   }, [loadTodaysVisits]);
@@ -613,7 +630,7 @@ export default function ReportsPage() {
       bySex[sexKey] = (bySex[sexKey] || 0) + 1;
     });
 
-    const monthLabels = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
     return { byMonth, bySex, thisYearCount, last30d, monthLabels };
   }, [patients, thisYear]);
@@ -638,7 +655,7 @@ export default function ReportsPage() {
       {
         label: 'Cumulative Patients',
         data: metrics.byMonth.reduce<number[]>((acc, val, i) => {
-          const sum = (acc[i-1] ?? 0) + val;
+          const sum = (acc[i - 1] ?? 0) + val;
           acc.push(sum);
           return acc;
         }, []),
@@ -694,7 +711,7 @@ export default function ReportsPage() {
         {statCard('Total Patients', patients.length, 'All time')}
         {statCard('This Year', metrics.thisYearCount, `${thisYear}`)}
         {statCard('Last 30 Days', metrics.last30d)}
-        <div 
+        <div
           className="bg-white dark:bg-gray-800 rounded-xl p-4 md:p-5 shadow-sm border border-gray-100 dark:border-gray-700 cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/10 transition-colors"
           onClick={() => {
             setSelectedDate(new Date());
@@ -713,14 +730,14 @@ export default function ReportsPage() {
           </div>
         </div>
       </div>
-      
+
       {/* Visit Details Modal */}
       {showVisitModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
             <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Patient Visits</h2>
-              <button 
+              <button
                 onClick={() => setShowVisitModal(false)}
                 className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
               >
@@ -729,7 +746,7 @@ export default function ReportsPage() {
                 </svg>
               </button>
             </div>
-            
+
             <div className="p-4 border-b border-gray-200 dark:border-gray-700">
               <div className="flex flex-wrap items-center gap-4">
                 <div className="flex-grow">
@@ -756,7 +773,7 @@ export default function ReportsPage() {
                 </div>
               </div>
             </div>
-            
+
             <div className="flex-1 overflow-y-auto p-4">
               {isLoadingVisits ? (
                 <div className="flex justify-center items-center h-40">
@@ -802,9 +819,9 @@ export default function ReportsPage() {
                                   ID: {patient.clinicId}
                                 </span>
                               )}
-                              {patient?.age && (
+                              {patient?.dob && (
                                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300">
-                                  Age: {patient.age}
+                                  Age: {calculateAge(patient.dob)} / DOB: {patient.dob}
                                 </span>
                               )}
                               {patient?.sex && (
@@ -836,7 +853,7 @@ export default function ReportsPage() {
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-6xl max-h-[90vh] flex flex-col overflow-hidden">
             <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Patient Details</h2>
-              <button 
+              <button
                 onClick={() => {
                   setShowPatientDetails(false);
                   setSelectedPatient(null);
@@ -848,7 +865,7 @@ export default function ReportsPage() {
                 </svg>
               </button>
             </div>
-            
+
             <div className="flex-1 overflow-y-auto p-6">
               <div className="flex justify-between items-start mb-6">
                 <div>
@@ -866,7 +883,7 @@ export default function ReportsPage() {
                   </p>
                 </div>
                 <div className="flex space-x-2">
-                  <button 
+                  <button
                     onClick={() => handleGenerateReport(selectedPatient)}
                     className="p-2 text-green-600 hover:bg-green-100 rounded-md transition duration-150"
                     title="Generate PDF Report"
@@ -875,7 +892,7 @@ export default function ReportsPage() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
                   </button>
-                  <button 
+                  <button
                     onClick={() => handleLogVisit(selectedPatient)}
                     className="p-2 text-amber-600 hover:bg-amber-100 rounded-md transition duration-150"
                     title="Log Visit (Returning Patient)"
@@ -891,10 +908,10 @@ export default function ReportsPage() {
                 <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
                   <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Personal Information</h3>
                   <div className="space-y-3">
-                    {selectedPatient.age && (
+                    {selectedPatient.dob && (
                       <div className="flex justify-between">
                         <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Age</span>
-                        <span className="text-sm text-gray-900 dark:text-gray-100">{selectedPatient.age}</span>
+                        <span className="text-sm text-gray-900 dark:text-gray-100">{calculateAge(selectedPatient.dob)}</span>
                       </div>
                     )}
                     {selectedPatient.sex && (
@@ -1025,7 +1042,19 @@ export default function ReportsPage() {
                     )}
                     {selectedPatient.report && (
                       <div className="flex flex-col">
-                        <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Report</span>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Report</span>
+                          <button
+                            onClick={() => handlePrintReport(selectedPatient)}
+                            title="Print report card for this patient"
+                            className="flex items-center px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs"
+                          >
+                            <svg className="h-3 w-3 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                            </svg>
+                            Print
+                          </button>
+                        </div>
                         <div className="mt-1 bg-white dark:bg-gray-800 p-2 rounded border border-gray-200 dark:border-gray-600 max-h-40 overflow-y-auto">
                           <span className="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap break-words">{selectedPatient.report}</span>
                         </div>
@@ -1034,9 +1063,9 @@ export default function ReportsPage() {
                     {selectedPatient.imageUrl && (
                       <div className="flex flex-col mt-2">
                         <span className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Patient Image URL</span>
-                        <a 
-                          href={selectedPatient.imageUrl} 
-                          target="_blank" 
+                        <a
+                          href={selectedPatient.imageUrl}
+                          target="_blank"
                           rel="noopener noreferrer"
                           className="text-sm text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 break-all"
                         >
@@ -1072,12 +1101,11 @@ export default function ReportsPage() {
                               return tableData.map((row, rowIndex) => (
                                 <tr key={rowIndex}>
                                   {Array.isArray(row) && row.map((cell, colIndex) => (
-                                    <td 
+                                    <td
                                       key={`${rowIndex}-${colIndex}`}
-                                      className={`border border-gray-300 dark:border-gray-600 px-2 py-1 text-xs ${
-                                        cell ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100' : 
-                                               'bg-gray-100 dark:bg-gray-800/50'
-                                      }`}
+                                      className={`border border-gray-300 dark:border-gray-600 px-2 py-1 text-xs ${cell ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100' :
+                                        'bg-gray-100 dark:bg-gray-800/50'
+                                        }`}
                                     >
                                       {cell || ''}
                                     </td>

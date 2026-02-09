@@ -13,15 +13,23 @@ export interface Database {
         Row: {
           id: string
           name: string
-          age: string
+          dob: string
           hospital_file_number: string
           mobile_number: string
           sex: string
           age_of_diagnosis: string
           diagnosis: string
           treatment: string
+          current_treatment: string
           response: string
           note: string | null
+          follow_up_date: string
+          table_data: string
+          image_url: string
+          imaging: string
+          ultrasound: string
+          lab_text: string
+          report: string
           created_at: string
           updated_at: string
           user_id: string
@@ -29,15 +37,23 @@ export interface Database {
         Insert: {
           id?: string
           name: string
-          age: string
+          dob: string
           hospital_file_number: string
           mobile_number: string
           sex: string
           age_of_diagnosis: string
           diagnosis: string
           treatment: string
+          current_treatment: string
           response: string
           note?: string | null
+          follow_up_date: string
+          table_data: string
+          image_url: string
+          imaging: string
+          ultrasound: string
+          lab_text: string
+          report: string
           created_at?: string
           updated_at?: string
           user_id: string
@@ -45,15 +61,23 @@ export interface Database {
         Update: {
           id?: string
           name?: string
-          age?: string
+          dob?: string
           hospital_file_number?: string
           mobile_number?: string
           sex?: string
           age_of_diagnosis?: string
           diagnosis?: string
           treatment?: string
+          current_treatment?: string
           response?: string
           note?: string | null
+          follow_up_date?: string
+          table_data?: string
+          image_url?: string
+          imaging?: string
+          ultrasound?: string
+          lab_text?: string
+          report?: string
           created_at?: string
           updated_at?: string
           user_id?: string

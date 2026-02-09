@@ -6,7 +6,7 @@ export const exportToExcel = (patients: Patient[], fileName: string = 'patients-
   const worksheet = XLSX.utils.json_to_sheet(
     patients.map(patient => ({
       'Name': patient.name,
-      'Age': patient.age,
+      'DOB': patient.dob,
       'Hospital File Number': patient.hospitalFileNumber,
       'Mobile Number': patient.mobileNumber,
       'Sex': patient.sex,
@@ -20,7 +20,8 @@ export const exportToExcel = (patients: Patient[], fileName: string = 'patients-
       'Image URL': patient.imageUrl,
       'Imaging': patient.imaging,
       'Ultrasound': patient.ultrasound,
-      'Lab Text': patient.labText,
+      'Lab Test': patient.labText,
+      'Follow Up Date': patient.followUpDate,
       'Created At': new Date(patient.createdAt).toLocaleDateString()
     }))
   );
@@ -28,21 +29,22 @@ export const exportToExcel = (patients: Patient[], fileName: string = 'patients-
   // Set column widths for better readability
   const columnWidths = [
     { wch: 20 }, // Name
-    { wch: 5 },  // Age
+    { wch: 12 }, // DOB
     { wch: 15 }, // Hospital File Number
     { wch: 15 }, // Mobile Number
     { wch: 8 },  // Sex
-    { wch: 10 }, // Age of Diagnosis
+    { wch: 15 }, // Age of Diagnosis
     { wch: 25 }, // Diagnosis
     { wch: 25 }, // Treatment
     { wch: 25 }, // Current Treatment
-    { wch: 10 }, // Clinic ID
+    { wch: 12 }, // Clinic ID
     { wch: 15 }, // Response
     { wch: 30 }, // Note
     { wch: 40 }, // Image URL
-    { wch: 30 }, // Imaging
-    { wch: 30 }, // Ultrasound
-    { wch: 30 }, // Lab Text
+    { wch: 25 }, // Imaging
+    { wch: 25 }, // Ultrasound
+    { wch: 20 }, // Lab Test
+    { wch: 15 }, // Follow Up Date
     { wch: 12 }  // Created At
   ];
   worksheet['!cols'] = columnWidths;
