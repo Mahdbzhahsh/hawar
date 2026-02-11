@@ -6,49 +6,60 @@ import SupabaseSetupGuide from '../components/SupabaseSetupGuide';
 
 export default function Dashboard() {
   const { patients } = usePatients();
-  
+
   // Calculate some basic stats from patients data
   const totalPatients = patients.length;
   const malePatients = patients.filter(p => p.sex === 'Male').length;
   const femalePatients = patients.filter(p => p.sex === 'Female').length;
-  const averageAge = patients.length > 0 
-    ? Math.round(patients.reduce((sum, patient) => sum + (parseInt(patient.age) || 0), 0) / patients.length) 
+  const calculateAge = (dob: string) => {
+    if (!dob) return 0;
+    const birthDate = new Date(dob);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age;
+  };
+  const averageAge = patients.length > 0
+    ? Math.round(patients.reduce((sum, patient) => sum + (calculateAge(patient.dob) || 0), 0) / patients.length)
     : 0;
-  
+
   // Stats for the dashboard
   const stats = [
-    { 
-      id: 1, 
-      name: 'Total Patients', 
-      value: totalPatients.toString(), 
+    {
+      id: 1,
+      name: 'Total Patients',
+      value: totalPatients.toString(),
       change: '+' + (patients.length > 0 ? patients.filter(p => {
         const createdDate = new Date(p.createdAt);
         const lastWeek = new Date();
         lastWeek.setDate(lastWeek.getDate() - 7);
         return createdDate > lastWeek;
-      }).length : 0) + ' this week', 
-      trend: 'up' 
+      }).length : 0) + ' this week',
+      trend: 'up'
     },
-    { 
-      id: 2, 
-      name: 'Male Patients', 
-      value: malePatients.toString(), 
-      change: malePatients > 0 ? Math.round((malePatients / totalPatients) * 100) + '%' : '0%', 
-      trend: 'up' 
+    {
+      id: 2,
+      name: 'Male Patients',
+      value: malePatients.toString(),
+      change: malePatients > 0 ? Math.round((malePatients / totalPatients) * 100) + '%' : '0%',
+      trend: 'up'
     },
-    { 
-      id: 3, 
-      name: 'Female Patients', 
-      value: femalePatients.toString(), 
-      change: femalePatients > 0 ? Math.round((femalePatients / totalPatients) * 100) + '%' : '0%', 
-      trend: 'up' 
+    {
+      id: 3,
+      name: 'Female Patients',
+      value: femalePatients.toString(),
+      change: femalePatients > 0 ? Math.round((femalePatients / totalPatients) * 100) + '%' : '0%',
+      trend: 'up'
     },
-    { 
-      id: 4, 
-      name: 'Average Age', 
-      value: averageAge > 0 ? averageAge.toString() : 'N/A', 
-      change: 'years', 
-      trend: 'neutral' 
+    {
+      id: 4,
+      name: 'Average Age',
+      value: averageAge > 0 ? averageAge.toString() : 'N/A',
+      change: 'years',
+      trend: 'neutral'
     },
   ];
 
@@ -59,9 +70,9 @@ export default function Dashboard() {
 
   // Format date function
   const formatDate = (dateString: string) => {
-    const options: Intl.DateTimeFormatOptions = { 
-      year: 'numeric', 
-      month: 'short', 
+    const options: Intl.DateTimeFormatOptions = {
+      year: 'numeric',
+      month: 'short',
       day: 'numeric',
     };
     return new Date(dateString).toLocaleDateString(undefined, options);
@@ -72,7 +83,7 @@ export default function Dashboard() {
       <div className="mb-6">
         <h1 className="text-2xl font-semibold text-gray-800 dark:text-white">Dashboard Overview</h1>
         <p className="text-gray-600 dark:text-gray-300 mt-2">
-          {patients.length === 0 
+          {patients.length === 0
             ? "Welcome! Start by adding your first patient."
             : `Managing ${totalPatients} patient${totalPatients !== 1 ? 's' : ''}`
           }
@@ -88,11 +99,10 @@ export default function Dashboard() {
           <div key={stat.id} className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">{stat.name}</h3>
-              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                stat.trend === 'up' ? 'bg-green-100 text-green-600' : 
-                stat.trend === 'down' ? 'bg-red-100 text-red-600' : 
-                'bg-gray-100 text-gray-600'
-              }`}>
+              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${stat.trend === 'up' ? 'bg-green-100 text-green-600' :
+                  stat.trend === 'down' ? 'bg-red-100 text-red-600' :
+                    'bg-gray-100 text-gray-600'
+                }`}>
                 {stat.change}
               </span>
             </div>
@@ -102,15 +112,15 @@ export default function Dashboard() {
           </div>
         ))}
       </div>
-      
+
       {/* Quick Actions and Recent Patients */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Quick Actions */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
           <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-6">Quick Actions</h3>
           <div className="space-y-4">
-            <Link 
-              href="/dashboard/patient-form" 
+            <Link
+              href="/dashboard/patient-form"
               className="flex items-center p-3 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition duration-150"
             >
               <svg className="h-5 w-5 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -118,8 +128,8 @@ export default function Dashboard() {
               </svg>
               Add New Patient
             </Link>
-            <Link 
-              href="/dashboard/patients" 
+            <Link
+              href="/dashboard/patients"
               className="flex items-center p-3 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition duration-150"
             >
               <svg className="h-5 w-5 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -138,7 +148,7 @@ export default function Dashboard() {
               View all →
             </Link>
           </div>
-          
+
           {recentPatients.length > 0 ? (
             <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
               <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
