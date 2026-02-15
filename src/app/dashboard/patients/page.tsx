@@ -77,35 +77,35 @@ export default function PatientsPage() {
       <html>
       <head>
         <title>${title} - ${patient.name}</title>
-                  <style>
-            /* Reset all margins and paddings */
-            * {
-              margin: 0;
-              padding: 0;
-              box-sizing: border-box;
-            }
-            
-            html, body {
-              width: 100%;
-              height: 100%;
-              margin: 0;
-              padding: 0;
-              background: white;
-              font-family: Arial, sans-serif;
-              overflow: hidden;
-            }
-            
-            .print-container {
-              width: 210mm; /* A5 landscape width */
-              height: 148mm; /* A5 landscape height */
-              position: relative;
-              border: none;
-              display: flex;
-              margin: 0 auto;
-              background: white;
-              page-break-inside: avoid;
-              page-break-after: always;
-            }
+        <style>
+          /* Reset all margins and paddings */
+          * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+          }
+          
+          html, body {
+            width: 210mm;
+            height: 148mm;
+            margin: 0;
+            padding: 0;
+            background: white;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+          }
+          
+          .print-container {
+            width: 210mm;
+            height: 148mm;
+            position: relative;
+            border: none;
+            display: flex;
+            margin: 0 auto;
+            background: white;
+            page-break-inside: avoid;
+            page-break-after: always;
+          }
             
           .report-image {
             width: 100%;
@@ -208,29 +208,29 @@ export default function PatientsPage() {
             
             @media print {
               @page {
-                size: A5 landscape;
+                size: 210mm 148mm;
                 margin: 0 !important;
                 padding: 0 !important;
                 border: none !important;
               }
               
               html, body {
-                width: 210mm;
-                height: 148mm;
+                width: 210mm !important;
+                height: 148mm !important;
                 margin: 0 !important;
                 padding: 0 !important;
-                overflow: hidden;
-                background: white;
+                overflow: hidden !important;
+                background: white !important;
               }
               
               .print-container {
-                width: 100%;
-                height: 100%;
+                width: 210mm !important;
+                height: 148mm !important;
                 margin: 0 !important;
                 padding: 0 !important;
-                position: absolute;
-                top: 0;
-                left: 0;
+                position: absolute !important;
+                top: 0 !important;
+                left: 0 !important;
               }
               
               .report-image {
@@ -259,7 +259,7 @@ export default function PatientsPage() {
               }
               
               .print-button {
-                display: none;
+                display: none !important;
               }
             }
           
@@ -316,7 +316,7 @@ export default function PatientsPage() {
         <script>
           // Auto-print with better fit for A5 landscape
           window.onload = function() {
-            // Force the window to be exactly A5 landscape size
+            // Force the window to be exactly A5 landscape size (210mm x 148mm)
             document.documentElement.style.width = '210mm';
             document.documentElement.style.height = '148mm';
             document.body.style.width = '210mm';
@@ -328,10 +328,9 @@ export default function PatientsPage() {
             document.body.style.border = 'none';
             document.body.style.overflow = 'hidden';
             
-            // Apply browser-specific overrides to remove margins
-            // This helps with Chrome's default print margins
+            // Apply browser-specific overrides for A5 landscape
             const style = document.createElement('style');
-            style.textContent = "@media print { @page { margin: 0 !important; } body { margin: 0 !important; } }";
+            style.textContent = "@media print { @page { size: 210mm 148mm; margin: 0 !important; } html, body { width: 210mm !important; height: 148mm !important; margin: 0 !important; } }";
             document.head.appendChild(style);
             
             // Trigger print after ensuring layout is complete
