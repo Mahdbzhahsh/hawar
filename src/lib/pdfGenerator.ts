@@ -1,3 +1,5 @@
+"use client";
+
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import type { Patient } from '@/app/context/PatientContext';
@@ -33,13 +35,17 @@ export const generatePatientPDF = async (patient: Patient) => {
   if (patient.imageUrl) {
     shortenedImageUrl = await shortenUrl(patient.imageUrl);
   }
-  // Create new PDF document
-  const doc = new jsPDF();
+  // Create new PDF document in A5 format
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a5'
+  });
 
-  // Page constants
-  const PAGE_HEIGHT = 280; // Maximum safe height for content (leaving margin for footer)
-  const PAGE_MARGIN = 20;
-  const CONTENT_WIDTH = 170; // Width of content area
+  // Page constants for A5
+  const PAGE_HEIGHT = 190; // Maximum safe height for A5 (210mm total)
+  const PAGE_MARGIN = 15;
+  const CONTENT_WIDTH = 118; // Width of content area for A5 (148mm total)
 
   // Tracking variables
   let currentY = 0;
@@ -101,18 +107,18 @@ export const generatePatientPDF = async (patient: Patient) => {
 
   // Add title
   currentY = PAGE_MARGIN;
-  doc.setFontSize(22);
+  doc.setFontSize(18); // Smaller font for A5
   doc.setTextColor(0, 51, 102);
-  doc.text('Patient Report', 105, currentY, { align: 'center' });
-  currentY += 15;
+  doc.text('Patient Report', 74, currentY, { align: 'center' }); // 74 is half of 148mm
+  currentY += 12;
 
   // Add clinic ID and date
-  doc.setFontSize(12);
+  doc.setFontSize(10); // Smaller font for A5
   doc.setTextColor(100, 100, 100);
-  doc.text(`Clinic ID: ${patient.clinicId || 'N/A'}`, 105, currentY, { align: 'center' });
+  doc.text(`Clinic ID: ${patient.clinicId || 'N/A'}`, 74, currentY, { align: 'center' });
   currentY += 5;
-  doc.text(`Report Date: ${new Date().toLocaleDateString()}`, 105, currentY, { align: 'center' });
-  currentY += 10;
+  doc.text(`Report Date: ${new Date().toLocaleDateString()}`, 74, currentY, { align: 'center' });
+  currentY += 8;
 
   // Add horizontal line
   doc.setDrawColor(220, 220, 220);
@@ -142,9 +148,9 @@ export const generatePatientPDF = async (patient: Patient) => {
       fontStyle: 'bold'
     },
     columnStyles: {
-      0: { cellWidth: 60, fontStyle: 'bold' }
+      0: { cellWidth: 40, fontStyle: 'bold' }
     },
-    styles: { overflow: 'linebreak', cellPadding: 5 }
+    styles: { overflow: 'linebreak', cellPadding: 3, fontSize: 10 }
   });
 
   // Update Y position
@@ -175,9 +181,9 @@ export const generatePatientPDF = async (patient: Patient) => {
       fontStyle: 'bold'
     },
     columnStyles: {
-      0: { cellWidth: 60, fontStyle: 'bold' }
+      0: { cellWidth: 40, fontStyle: 'bold' }
     },
-    styles: { overflow: 'linebreak', cellPadding: 5 }
+    styles: { overflow: 'linebreak', cellPadding: 3, fontSize: 10 }
   });
 
   // Update Y position
@@ -270,9 +276,9 @@ export const generatePatientPDF = async (patient: Patient) => {
   const pageCount = doc.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
-    doc.setFontSize(10);
+    doc.setFontSize(9);
     doc.setTextColor(150, 150, 150);
-    doc.text(`Page ${i} of ${pageCount}`, 105, 290, { align: 'center' });
+    doc.text(`Page ${i} of ${pageCount}`, 74, 205, { align: 'center' });
   }
 
   // Generate filename with just the clinic ID
@@ -281,3 +287,63 @@ export const generatePatientPDF = async (patient: Patient) => {
   // Save and open the PDF
   doc.save(filename);
 };
+
+export const generateCardPDF = async (patient: Patient, content: string, title: string): Promise<jsPDF> => {
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a5'
+  });
+
+  const calculateAge = (dob: string): string => {
+    if (!dob) return 'N/A';
+    const birthDate = new Date(dob);
+    if (isNaN(birthDate.getTime())) return 'N/A';
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age.toString();
+  };
+
+  try {
+    doc.addImage('/drhawar.jpg', 'JPEG', 0, 0, 148, 210);
+  } catch (e) {
+    console.warn('Could not add background image to PDF share:', e);
+  }
+
+  const infoY = 56;
+  const leftX = 15;
+
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Name:', leftX, infoY);
+  doc.setFont('helvetica', 'normal');
+  doc.text(patient.name || 'N/A', leftX + 13, infoY);
+
+  const detailsY = infoY + 8;
+  doc.setFont('helvetica', 'bold');
+  doc.text('Age:', leftX, detailsY);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`${calculateAge(patient.dob)} / DOB: ${patient.dob || 'N/A'}`, leftX + 13, detailsY);
+
+  doc.setFont('helvetica', 'bold');
+  doc.text('clinic ID:', 90, detailsY);
+  doc.setFont('helvetica', 'normal');
+  doc.text(patient.clinicId || 'N/A', 106, detailsY);
+
+  const contentY = 74;
+  doc.setDrawColor(0, 0, 0);
+  doc.setLineDashPattern([1, 1], 0);
+  doc.line(leftX, contentY, 133, contentY);
+
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.setLineDashPattern([], 0);
+  const textLines = doc.splitTextToSize(content, 118);
+  doc.text(textLines, leftX + 2, contentY + 10);
+
+  return doc;
+};
