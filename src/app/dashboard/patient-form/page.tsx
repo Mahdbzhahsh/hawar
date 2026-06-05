@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { usePatients } from '../../context/PatientContext';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
+import InvestigationImageModal from '../../components/InvestigationImageModal';
 
 export default function PatientForm() {
   const { addPatient, isLoading, error } = usePatients();
@@ -11,6 +12,7 @@ export default function PatientForm() {
   const { isStaffAuth } = useAuth();
   const [formSubmitted, setFormSubmitted] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
 
   // For staff, restrict specific fields but allow submission
   const isStaff = Boolean(isStaffAuth);
@@ -424,22 +426,33 @@ export default function PatientForm() {
                         </div>
                       )}
 
-                      {/* Patient Image URL (Optional) */}
+                      {/* Investigation Images */}
                       {!isStaff && (
                         <div>
-                          <label htmlFor="imageUrl" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Patient Image URL <span className="text-xs text-gray-500">(Optional)</span>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Investigation Images
                           </label>
-                          <input
-                            type="text"
-                            id="imageUrl"
-                            name="imageUrl"
-                            value={formData.imageUrl}
-                            onChange={handleChange}
-                            disabled={isLoading || formSubmitted || isStaff}
-                            className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed transition-all duration-200"
-                            placeholder="URL to patient image"
-                          />
+                          <div className="flex items-center space-x-3">
+                            <button
+                              type="button"
+                              onClick={() => setIsImageModalOpen(true)}
+                              disabled={isLoading || formSubmitted || isStaff}
+                              className="flex items-center justify-center space-x-2 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all duration-200"
+                            >
+                              <svg className="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                              </svg>
+                              <span className="text-sm font-medium">Manage Images</span>
+                            </button>
+                            {formData.imageUrl && (
+                              <span className="text-xs text-green-600 dark:text-green-400 flex items-center">
+                                <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                </svg>
+                                Images attached
+                              </span>
+                            )}
+                          </div>
                         </div>
                       )}
 
@@ -712,6 +725,13 @@ export default function PatientForm() {
           </form>
         </div>
       </div>
+      {/* Investigation Image Modal */}
+      <InvestigationImageModal
+        isOpen={isImageModalOpen}
+        onClose={() => setIsImageModalOpen(false)}
+        patientName={formData.name || 'New Patient'}
+        patientId="NEW"
+      />
     </div>
   );
 }

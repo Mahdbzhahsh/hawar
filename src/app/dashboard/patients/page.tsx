@@ -358,19 +358,11 @@ export default function PatientsPage() {
         <script>
           // Auto-print with better fit for A5 landscape
           window.onload = function() {
-<<<<<<< HEAD
-            // Force the window to be exactly A5 landscape size (210mm x 148mm)
-            document.documentElement.style.width = '210mm';
-            document.documentElement.style.height = '148mm';
-            document.body.style.width = '210mm';
-            document.body.style.height = '148mm';
-=======
             // Force the window to be exactly A5 portrait size
             document.documentElement.style.width = '148mm';
             document.documentElement.style.height = '210mm';
             document.body.style.width = '148mm';
             document.body.style.height = '210mm';
->>>>>>> e0ac010 (done)
             
             // Remove any browser-specific margins and borders
             document.body.style.margin = '0';
