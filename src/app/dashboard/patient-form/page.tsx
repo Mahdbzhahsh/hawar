@@ -731,11 +731,8 @@ export default function PatientForm() {
         onClose={() => setIsImageModalOpen(false)}
         patientName={formData.name || 'New Patient'}
         patientId="NEW"
-<<<<<<< HEAD
         initialImages={formData.imageUrl ? formData.imageUrl.split(',').filter(Boolean) : []}
         onSave={(urls) => setFormData(prev => ({ ...prev, imageUrl: urls.join(',') }))}
-=======
->>>>>>> ffc76def9e3743f262c40b24cec341f069341772
       />
     </div>
   );

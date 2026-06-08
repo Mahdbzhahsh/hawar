@@ -5,11 +5,7 @@ import autoTable from 'jspdf-autotable';
 import type { Patient } from '@/app/context/PatientContext';
 
 // Function to shorten URL using is.gd API
-<<<<<<< HEAD
 export const shortenUrl = async (url: string): Promise<string> => {
-=======
-const shortenUrl = async (url: string): Promise<string> => {
->>>>>>> ffc76def9e3743f262c40b24cec341f069341772
   if (!url) return 'N/A';
 
   try {
@@ -37,13 +33,9 @@ export const generatePatientPDF = async (patient: Patient) => {
   // Shorten the image URL if it exists
   let shortenedImageUrl = 'N/A';
   if (patient.imageUrl) {
-<<<<<<< HEAD
     const urls = patient.imageUrl.split(',').filter(Boolean);
     const shortenedUrls = await Promise.all(urls.map(url => shortenUrl(url.trim())));
     shortenedImageUrl = shortenedUrls.join('\n');
-=======
-    shortenedImageUrl = await shortenUrl(patient.imageUrl);
->>>>>>> ffc76def9e3743f262c40b24cec341f069341772
   }
   // Create new PDF document in A5 format
   const doc = new jsPDF({
