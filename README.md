@@ -27,15 +27,6 @@ The application supports two authentication methods:
 
 Both authentication methods now store data in Supabase, ensuring data persistence across devices and sessions.
 
-## Environment Variables
-
-The application uses the following environment variables:
-
-```
-NEXT_PUBLIC_SUPABASE_URL=https://guuhuookghgjwfljsolq.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd1dWh1b29rZ2hnandmbGpzb2xxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM0NDI5NjksImV4cCI6MjA2OTAxODk2OX0.yd1XGuSydXY7rAZPvHMVLPPG0zD-rPJgqLmrmKGvZFM
-```
-
 ## Getting Started
 
 First, run the development server:

@@ -1,7 +1,11 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+<<<<<<< HEAD
 import { Patient, usePatients } from '../context/PatientContext';
+=======
+import { Patient } from '../context/PatientContext';
+>>>>>>> ffc76def9e3743f262c40b24cec341f069341772
 import InvestigationImageModal from './InvestigationImageModal';
 
 interface PatientEditFormProps {
@@ -960,6 +964,7 @@ export default function PatientEditForm({ patient, onSubmit, onCancel, isLoading
         onClose={() => setIsImageModalOpen(false)}
         patientName={formData.name}
         patientId={patient.clinicId || ''}
+<<<<<<< HEAD
         initialImages={formData.imageUrl ? formData.imageUrl.split(',').filter(Boolean) : []}
         onSave={async (urls) => {
           const newImageUrl = urls.join(',');
@@ -970,6 +975,8 @@ export default function PatientEditForm({ patient, onSubmit, onCancel, isLoading
             console.error('Failed to auto-save image list to database:', err);
           }
         }}
+=======
+>>>>>>> ffc76def9e3743f262c40b24cec341f069341772
       />
     </form>
   );
