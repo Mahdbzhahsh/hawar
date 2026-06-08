@@ -38,6 +38,7 @@ export async function ensurePatientsTableExists() {
       console.error('- diagnosis: text');
       console.error('- treatment: text');
       console.error('- current_treatment: text');
+      console.error('- clinic_id: text');
       console.error('- response: text');
       console.error('- note: text');
       console.error('- follow_up_date: text');
@@ -51,6 +52,77 @@ export async function ensurePatientsTableExists() {
       console.error('- user_id: uuid');
 
       return false;
+    }
+
+    // Ensure the public RPC function exists for sharing links
+    try {
+      const { error: rpcError } = await supabase.rpc('exec_sql', {
+        sql: `
+          CREATE OR REPLACE FUNCTION public.get_patient_by_id_public(patient_id uuid)
+          RETURNS TABLE (
+            id uuid,
+            name text,
+            dob text,
+            hospital_file_number text,
+            mobile_number text,
+            sex text,
+            age_of_diagnosis text,
+            diagnosis text,
+            treatment text,
+            current_treatment text,
+            clinic_id text,
+            response text,
+            note text,
+            follow_up_date text,
+            table_data text,
+            image_url text,
+            imaging text,
+            ultrasound text,
+            lab_text text,
+            report text,
+            created_at timestamp with time zone,
+            user_id uuid
+          ) 
+          SECURITY DEFINER
+          AS $$
+          BEGIN
+            RETURN QUERY
+            SELECT 
+              p.id,
+              p.name,
+              p.dob,
+              p.hospital_file_number,
+              p.mobile_number,
+              p.sex,
+              p.age_of_diagnosis,
+              p.diagnosis,
+              p.treatment,
+              p.current_treatment,
+              p.clinic_id,
+              p.response,
+              p.note,
+              p.follow_up_date,
+              p.table_data,
+              p.image_url,
+              p.imaging,
+              p.ultrasound,
+              p.lab_text,
+              p.report,
+              p.created_at,
+              p.user_id
+            FROM public.patients p
+            WHERE p.id = patient_id;
+          END;
+          $$ LANGUAGE plpgsql;
+        `
+      });
+      if (rpcError) {
+        console.error('Error creating get_patient_by_id_public RPC:', rpcError);
+      } else {
+        console.log('Successfully verified/created get_patient_by_id_public RPC');
+      }
+    } catch (rpcErr) {
+      console.error('Failed to run rpc get_patient_by_id_public verification:', rpcErr);
     }
 
     return true;

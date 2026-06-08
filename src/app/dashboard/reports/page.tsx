@@ -6,6 +6,7 @@ import { supabase, ensureVisitsTableExists } from '@/lib/supabase';
 import { useState } from 'react';
 import { useAuth } from '@/app/context/AuthContext';
 import { generatePatientPDF } from '@/lib/pdfGenerator';
+import { shareTreatmentCard } from '@/lib/shareUtils';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -44,6 +45,13 @@ export default function ReportsPage() {
   const [isLoadingVisits, setIsLoadingVisits] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [showPatientDetails, setShowPatientDetails] = useState(false);
+  const [showImages, setShowImages] = useState(false);
+  const [brokenImages, setBrokenImages] = useState<Record<string, boolean>>({});
+
+  // Reset showImages when selectedPatient changes
+  useEffect(() => {
+    setShowImages(false);
+  }, [selectedPatient?.id]);
 
   // Function to load visits for a specific date
   const loadVisitsForDate = async (date: Date) => {
@@ -210,8 +218,8 @@ export default function ReportsPage() {
           }
           
           .print-container {
-            width: 210mm; /* A5 landscape width */
-            height: 148mm; /* A5 landscape height */
+            width: 148mm; /* A5 portrait width */
+            height: 210mm; /* A5 portrait height */
             position: relative;
             border: none;
             display: flex;
@@ -240,19 +248,19 @@ export default function ReportsPage() {
       /* Patient info container - positioned at top left */
  .patient-info {
    position: absolute;
-   top: 148px;  /* Moved 2px higher */
-   left: 20px;
-   width: 45%;
+   top: 205px;  /* Adjusted for A5 Portrait */
+   left: 15px;
+   width: 90%;
    padding: 10px;
    box-sizing: border-box;
  }
 
-/* Treatment data container - positioned at middle left */
+/* Treatment data container - positioned below patient info */
 .treatment-data {
   position: absolute;
-  top: 205px;  /* Moved higher to close gap (up from 275px) */
-  left: 20px;
-  width: 45%;
+  top: 280px;  /* Adjusted for A5 Portrait */
+  left: 15px;
+  width: 90%;
   padding: 10px;
   box-sizing: border-box;
 }
@@ -322,15 +330,15 @@ export default function ReportsPage() {
           
             @media print {
               @page {
-                size: A5 landscape;
+                size: A5 portrait;
                 margin: 0 !important;
                 padding: 0 !important;
                 border: none !important;
               }
               
               html, body {
-                width: 210mm;
-                height: 148mm;
+                width: 148mm;
+                height: 210mm;
                 margin: 0 !important;
                 padding: 0 !important;
                 overflow: hidden;
@@ -360,16 +368,16 @@ export default function ReportsPage() {
               
               .patient-info {
                 position: absolute !important;
-                top: 148px !important;
-                left: 20px !important;
-                width: 45% !important;
+                top: 205px !important;
+                left: 15px !important;
+                width: 90% !important;
               }
               
               .treatment-data {
                 position: absolute !important;
-                top: 205px !important;
-                left: 20px !important;
-                width: 45% !important;
+                top: 280px !important;
+                left: 15px !important;
+                width: 90% !important;
               }
               
               .print-button {
@@ -430,11 +438,11 @@ export default function ReportsPage() {
         <script>
           // Auto-print with better fit for A5 landscape
           window.onload = function() {
-            // Force the window to be exactly A5 landscape size
-            document.documentElement.style.width = '210mm';
-            document.documentElement.style.height = '148mm';
-            document.body.style.width = '210mm';
-            document.body.style.height = '148mm';
+            // Force the window to be exactly A5 portrait size
+            document.documentElement.style.width = '148mm';
+            document.documentElement.style.height = '210mm';
+            document.body.style.width = '148mm';
+            document.body.style.height = '210mm';
             
             // Remove any browser-specific margins and borders
             document.body.style.margin = '0';
@@ -964,6 +972,15 @@ export default function ReportsPage() {
                             </svg>
                             Print
                           </button>
+                          <button
+                            onClick={() => shareTreatmentCard(selectedPatient, selectedPatient.currentTreatment || '', 'Treatment Card')}
+                            className="flex items-center px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs ml-1"
+                          >
+                            <svg className="h-3 w-3 mr-1" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0012.04 2m.01 1.67c2.2 0 4.26.86 5.82 2.42 1.56 1.56 2.41 3.63 2.41 5.83 0 4.54-3.7 8.23-8.24 8.23-1.48 0-2.93-.39-4.19-1.14l-.3-.18-3.12.82.83-3.04-.2-.32a8.188 8.188 0 01-1.26-4.38c.01-4.54 3.7-8.24 8.24-8.24m-3.96 4.73c-.22 0-.37.03-.52.2-.15.18-.58.57-.58 1.39 0 .82.6 1.62.68 1.73.08.11 1.18 1.81 2.86 2.53.4.17.71.27.96.35.4.13.77.11 1.06.07.32-.04 1-.41 1.14-.81.14-.39.14-.73.1-.81-.04-.08-.15-.12-.32-.21-.17-.08-1.01-.5-1.17-.55-.16-.05-.27-.08-.39.08-.12.18-.46.58-.57.7-.1.11-.21.13-.38.04-.17-.08-.73-.27-1.39-.86-.51-.46-.86-1.03-.96-1.2-.1-.17-.01-.27.07-.35.08-.08.17-.2.26-.3.09-.09.12-.17.18-.28.06-.11.03-.21-.01-.3-.04-.09-.39-.95-.54-1.3-.15-.35-.3-.3-.39-.3z" />
+                            </svg>
+                            Share
+                          </button>
                         </div>
                         <div className="mt-1 bg-white dark:bg-gray-800 p-2 rounded border border-gray-200 dark:border-gray-600 max-h-40 overflow-y-auto">
                           <p className="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap break-words">{selectedPatient.currentTreatment}</p>
@@ -984,16 +1001,25 @@ export default function ReportsPage() {
                       <div className="flex flex-col">
                         <div className="flex justify-between items-center">
                           <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Imaging</span>
-                          <button
-                            onClick={() => handlePrintImaging(selectedPatient)}
-                            title="Print imaging card for this patient"
-                            className="flex items-center px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs"
-                          >
-                            <svg className="h-3 w-3 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                            </svg>
-                            Print
-                          </button>
+                            <button
+                              onClick={() => handlePrintImaging(selectedPatient)}
+                              title="Print imaging card for this patient"
+                              className="flex items-center px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs"
+                            >
+                              <svg className="h-3 w-3 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                              </svg>
+                              Print
+                            </button>
+                            <button
+                              onClick={() => shareTreatmentCard(selectedPatient, selectedPatient.imaging || '', 'Imaging Card')}
+                              className="flex items-center px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs ml-1"
+                            >
+                              <svg className="h-3 w-3 mr-1" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0012.04 2m.01 1.67c2.2 0 4.26.86 5.82 2.42 1.56 1.56 2.41 3.63 2.41 5.83 0 4.54-3.7 8.23-8.24 8.23-1.48 0-2.93-.39-4.19-1.14l-.3-.18-3.12.82.83-3.04-.2-.32a8.188 8.188 0 01-1.26-4.38c.01-4.54 3.7-8.24 8.24-8.24m-3.96 4.73c-.22 0-.37.03-.52.2-.15.18-.58.57-.58 1.39 0 .82.6 1.62.68 1.73.08.11 1.18 1.81 2.86 2.53.4.17.71.27.96.35.4.13.77.11 1.06.07.32-.04 1-.41 1.14-.81.14-.39.14-.73.1-.81-.04-.08-.15-.12-.32-.21-.17-.08-1.01-.5-1.17-.55-.16-.05-.27-.08-.39.08-.12.18-.46.58-.57.7-.1.11-.21.13-.38.04-.17-.08-.73-.27-1.39-.86-.51-.46-.86-1.03-.96-1.2-.1-.17-.01-.27.07-.35.08-.08.17-.2.26-.3.09-.09.12-.17.18-.28.06-.11.03-.21-.01-.3-.04-.09-.39-.95-.54-1.3-.15-.35-.3-.3-.39-.3z" />
+                              </svg>
+                              Share
+                            </button>
                         </div>
                         <div className="mt-1 bg-white dark:bg-gray-800 p-2 rounded border border-gray-200 dark:border-gray-600 max-h-40 overflow-y-auto">
                           <span className="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap break-words">{selectedPatient.imaging}</span>
@@ -1013,6 +1039,15 @@ export default function ReportsPage() {
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                             </svg>
                             Print
+                          </button>
+                          <button
+                            onClick={() => shareTreatmentCard(selectedPatient, selectedPatient.ultrasound || '', 'Ultrasound Card')}
+                            className="flex items-center px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs ml-1"
+                          >
+                            <svg className="h-3 w-3 mr-1" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0012.04 2m.01 1.67c2.2 0 4.26.86 5.82 2.42 1.56 1.56 2.41 3.63 2.41 5.83 0 4.54-3.7 8.23-8.24 8.23-1.48 0-2.93-.39-4.19-1.14l-.3-.18-3.12.82.83-3.04-.2-.32a8.188 8.188 0 01-1.26-4.38c.01-4.54 3.7-8.24 8.24-8.24m-3.96 4.73c-.22 0-.37.03-.52.2-.15.18-.58.57-.58 1.39 0 .82.6 1.62.68 1.73.08.11 1.18 1.81 2.86 2.53.4.17.71.27.96.35.4.13.77.11 1.06.07.32-.04 1-.41 1.14-.81.14-.39.14-.73.1-.81-.04-.08-.15-.12-.32-.21-.17-.08-1.01-.5-1.17-.55-.16-.05-.27-.08-.39.08-.12.18-.46.58-.57.7-.1.11-.21.13-.38.04-.17-.08-.73-.27-1.39-.86-.51-.46-.86-1.03-.96-1.2-.1-.17-.01-.27.07-.35.08-.08.17-.2.26-.3.09-.09.12-.17.18-.28.06-.11.03-.21-.01-.3-.04-.09-.39-.95-.54-1.3-.15-.35-.3-.3-.39-.3z" />
+                            </svg>
+                            Share
                           </button>
                         </div>
                         <div className="mt-1 bg-white dark:bg-gray-800 p-2 rounded border border-gray-200 dark:border-gray-600 max-h-40 overflow-y-auto">
@@ -1034,6 +1069,15 @@ export default function ReportsPage() {
                             </svg>
                             Print
                           </button>
+                          <button
+                            onClick={() => shareTreatmentCard(selectedPatient, selectedPatient.labText || '', 'Lab Test Card')}
+                            className="flex items-center px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs ml-1"
+                          >
+                            <svg className="h-3 w-3 mr-1" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0012.04 2m.01 1.67c2.2 0 4.26.86 5.82 2.42 1.56 1.56 2.41 3.63 2.41 5.83 0 4.54-3.7 8.23-8.24 8.23-1.48 0-2.93-.39-4.19-1.14l-.3-.18-3.12.82.83-3.04-.2-.32a8.188 8.188 0 01-1.26-4.38c.01-4.54 3.7-8.24 8.24-8.24m-3.96 4.73c-.22 0-.37.03-.52.2-.15.18-.58.57-.58 1.39 0 .82.6 1.62.68 1.73.08.11 1.18 1.81 2.86 2.53.4.17.71.27.96.35.4.13.77.11 1.06.07.32-.04 1-.41 1.14-.81.14-.39.14-.73.1-.81-.04-.08-.15-.12-.32-.21-.17-.08-1.01-.5-1.17-.55-.16-.05-.27-.08-.39.08-.12.18-.46.58-.57.7-.1.11-.21.13-.38.04-.17-.08-.73-.27-1.39-.86-.51-.46-.86-1.03-.96-1.2-.1-.17-.01-.27.07-.35.08-.08.17-.2.26-.3.09-.09.12-.17.18-.28.06-.11.03-.21-.01-.3-.04-.09-.39-.95-.54-1.3-.15-.35-.3-.3-.39-.3z" />
+                            </svg>
+                            Share
+                          </button>
                         </div>
                         <div className="mt-1 bg-white dark:bg-gray-800 p-2 rounded border border-gray-200 dark:border-gray-600 max-h-40 overflow-y-auto">
                           <span className="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap break-words">{selectedPatient.labText}</span>
@@ -1054,6 +1098,15 @@ export default function ReportsPage() {
                             </svg>
                             Print
                           </button>
+                          <button
+                            onClick={() => shareTreatmentCard(selectedPatient, selectedPatient.report || '', 'Report Card')}
+                            className="flex items-center px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs ml-1"
+                          >
+                            <svg className="h-3 w-3 mr-1" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0012.04 2m.01 1.67c2.2 0 4.26.86 5.82 2.42 1.56 1.56 2.41 3.63 2.41 5.83 0 4.54-3.7 8.23-8.24 8.23-1.48 0-2.93-.39-4.19-1.14l-.3-.18-3.12.82.83-3.04-.2-.32a8.188 8.188 0 01-1.26-4.38c.01-4.54 3.7-8.24 8.24-8.24m-3.96 4.73c-.22 0-.37.03-.52.2-.15.18-.58.57-.58 1.39 0 .82.6 1.62.68 1.73.08.11 1.18 1.81 2.86 2.53.4.17.71.27.96.35.4.13.77.11 1.06.07.32-.04 1-.41 1.14-.81.14-.39.14-.73.1-.81-.04-.08-.15-.12-.32-.21-.17-.08-1.01-.5-1.17-.55-.16-.05-.27-.08-.39.08-.12.18-.46.58-.57.7-.1.11-.21.13-.38.04-.17-.08-.73-.27-1.39-.86-.51-.46-.86-1.03-.96-1.2-.1-.17-.01-.27.07-.35.08-.08.17-.2.26-.3.09-.09.12-.17.18-.28.06-.11.03-.21-.01-.3-.04-.09-.39-.95-.54-1.3-.15-.35-.3-.3-.39-.3z" />
+                            </svg>
+                            Share
+                          </button>
                         </div>
                         <div className="mt-1 bg-white dark:bg-gray-800 p-2 rounded border border-gray-200 dark:border-gray-600 max-h-40 overflow-y-auto">
                           <span className="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap break-words">{selectedPatient.report}</span>
@@ -1061,16 +1114,66 @@ export default function ReportsPage() {
                       </div>
                     )}
                     {selectedPatient.imageUrl && (
-                      <div className="flex flex-col mt-2">
-                        <span className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Patient Image URL</span>
-                        <a
-                          href={selectedPatient.imageUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-sm text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 break-all"
-                        >
-                          {selectedPatient.imageUrl}
-                        </a>
+                      <div className="flex flex-col mt-4">
+                        <span className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Investigation Images</span>
+                        {!showImages ? (
+                          <button
+                            type="button"
+                            onClick={() => setShowImages(true)}
+                            className="flex items-center justify-center space-x-2 w-full py-3 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/20 dark:hover:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800/60 rounded-xl transition-all duration-200 font-medium active:scale-98"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            <span>View Investigation Images ({selectedPatient.imageUrl.split(',').filter(Boolean).length})</span>
+                          </button>
+                        ) : (
+                          <div className="border border-gray-200 dark:border-gray-700/60 rounded-xl p-4 bg-gray-50 dark:bg-gray-800/40">
+                            <div className="flex justify-between items-center mb-3">
+                              <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">Images Loaded from R2</span>
+                              <button
+                                type="button"
+                                onClick={() => setShowImages(false)}
+                                className="text-xs text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 font-semibold"
+                              >
+                                Hide Images
+                              </button>
+                            </div>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                              {selectedPatient.imageUrl.split(',').filter(Boolean).map((url, idx) => (
+                                <a
+                                  key={idx}
+                                  href={url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="relative group block aspect-square bg-gray-900 rounded-lg overflow-hidden border border-gray-300 dark:border-gray-700 hover:border-indigo-500 transition-colors shadow-sm"
+                                >
+                                  {brokenImages[url] ? (
+                                    <div className="w-full h-full flex flex-col items-center justify-center p-2 bg-gray-205 dark:bg-gray-800 text-center text-gray-400 dark:text-gray-500">
+                                      <svg className="w-6 h-6 mb-1 text-gray-400 dark:text-gray-650" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                      </svg>
+                                      <span className="text-[10px] font-semibold text-gray-500 dark:text-gray-400">Image Missing</span>
+                                    </div>
+                                  ) : (
+                                    <img
+                                      src={url}
+                                      alt={`Investigation ${idx + 1}`}
+                                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                      loading="lazy"
+                                      onError={() => setBrokenImages((prev) => ({ ...prev, [url]: true }))}
+                                    />
+                                  )}
+                                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                    </svg>
+                                  </div>
+                                </a>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
