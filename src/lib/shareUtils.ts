@@ -37,25 +37,7 @@ export const shareTreatmentCard = async (patient: Patient, content: string, titl
 
     const messageText = `Here is the ${title} link for ${patient.name}: ${shortUrl}`;
 
-    // Detect if mobile for sharing API
-    const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-
-    // 1. Try using Web Share API on Mobile
-    if (isMobile && navigator.share) {
-      try {
-        await navigator.share({
-          title: title,
-          text: `Patient Card: ${patient.name}`,
-          url: shortUrl,
-        });
-        return; // Success
-      } catch (shareError) {
-        // User cancelled or share failed, continue to fallback
-        console.log('Share API failed or cancelled:', shareError);
-      }
-    }
-
-    // 2. Fallback: Open WhatsApp with the pre-filled link message
+    // Open WhatsApp with the pre-filled link message
     if (mobileNumber) {
       const text = encodeURIComponent(messageText);
       const waUrl = `https://api.whatsapp.com/send?phone=${mobileNumber}&text=${text}`;
