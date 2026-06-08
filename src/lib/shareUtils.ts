@@ -41,7 +41,13 @@ export const shareTreatmentCard = async (patient: Patient, content: string, titl
     if (mobileNumber) {
       const text = encodeURIComponent(messageText);
       const waUrl = `https://api.whatsapp.com/send?phone=${mobileNumber}&text=${text}`;
-      window.open(waUrl, '_blank');
+      
+      const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+      if (isMobile) {
+        window.location.href = waUrl;
+      } else {
+        window.open(waUrl, '_blank');
+      }
     } else {
       // Copy to clipboard if mobile number is missing
       try {
