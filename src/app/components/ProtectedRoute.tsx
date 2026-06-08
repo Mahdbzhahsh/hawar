@@ -8,13 +8,14 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
   const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const isPublicRoute = pathname === '/login' || pathname?.startsWith('/share');
 
   useEffect(() => {
     // Don't redirect while loading to prevent flashing
     if (isLoading) return;
 
     // If not authenticated and trying to access protected routes
-    if (!isAuthenticated && pathname !== '/login') {
+    if (!isAuthenticated && !isPublicRoute) {
       router.push('/login');
     }
     
@@ -22,7 +23,7 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
     if (isAuthenticated && pathname === '/login') {
       router.push('/dashboard');
     }
-  }, [isAuthenticated, router, pathname, isLoading]);
+  }, [isAuthenticated, router, pathname, isLoading, isPublicRoute]);
 
   // Show loading state
   if (isLoading) {
@@ -40,7 +41,7 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
   }
 
   // If the user is not authenticated and trying to access a protected route
-  if (!isAuthenticated && pathname !== '/login') {
+  if (!isAuthenticated && !isPublicRoute) {
     return null; // Return nothing while redirecting
   }
 
